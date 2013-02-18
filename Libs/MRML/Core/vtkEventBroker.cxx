@@ -708,11 +708,11 @@ void vtkEventBroker::ProcessEvent ( vtkObservation *observation, vtkObject *call
     {
     if ( this->EventMode == vtkEventBroker::Synchronous || eid == vtkCommand::DeleteEvent )
       {
-      this->InvokeObservation( observation, callData );
+      this->InvokeObservation( observation, eid, callData );
       }
     else if ( this->EventMode == vtkEventBroker::Asynchronous )
       {
-      this->QueueObservation( observation, callData );
+      this->QueueObservation( observation, eid, callData );
       }
     else
       {
@@ -737,7 +737,7 @@ void vtkEventBroker::ProcessEvent ( vtkObservation *observation, vtkObject *call
       {
       if ( (*obsIter)->GetEvent() == vtkCommand::DeleteEvent )
         {
-        this->InvokeObservation( observation, callData );
+        this->InvokeObservation( observation, eid, callData );
         }
       }
     if ( caller == observation->GetSubject() )
@@ -761,9 +761,10 @@ void vtkEventBroker::ProcessEvent ( vtkObservation *observation, vtkObject *call
 
 
 //----------------------------------------------------------------------------
-void vtkEventBroker::QueueObservation ( vtkObservation *observation, void *callData )
+void vtkEventBroker::QueueObservation ( vtkObservation *observation,
+                                        unsigned long eid,
+                                        void *callData )
 {
-
   //
   // two modes - 
   //  - CompressCallDataOn: only keep the most recent call data.  this means that if the
@@ -774,24 +775,27 @@ void vtkEventBroker::QueueObservation ( vtkObservation *observation, void *callD
   // can be invoked.
   // If the event is not currently in the queue, add it and keep a flag.
   //
-  if ( this->GetCompressCallData() )
+  vtkObservation::CallType call(eid, callData);
+  if ( this->GetCompressCallData() &&
+       observation->GetEvent() != vtkCommand::AnyEvent)
     {
     observation->GetCallDataList()->clear();
-    observation->GetCallDataList()->push_back( callData );
+    observation->GetCallDataList()->push_back( call );
     }
   else
     {
-    std::deque< void *>::iterator dataIter; 
-    for(dataIter=observation->GetCallDataList()->begin(); dataIter != observation->GetCallDataList()->end(); dataIter++)  
+    std::deque< vtkObservation::CallType >::const_iterator dataIter;
+    for(dataIter=observation->GetCallDataList()->begin();dataIter != observation->GetCallDataList()->end(); dataIter++)  
       {
-      if ( *dataIter == callData )
+      if ( call.EventID == dataIter->EventID &&
+           call.CallData == dataIter->CallData)
         {
         break;
         }
       }
     if ( dataIter == observation->GetCallDataList()->end() )
       {
-      observation->GetCallDataList()->push_back( callData );
+      observation->GetCallDataList()->push_back( call );
       }
     }
 
@@ -828,7 +832,8 @@ vtkObservation *vtkEventBroker::DequeueObservation ()
 }
 
 //----------------------------------------------------------------------------
-void vtkEventBroker::InvokeObservation ( vtkObservation *observation, void *callData )
+void vtkEventBroker::InvokeObservation ( vtkObservation *observation,
+                                         unsigned long eid, void *callData )
 {
   this->EventNestingLevel++;
 
@@ -853,7 +858,7 @@ void vtkEventBroker::InvokeObservation ( vtkObservation *observation, void *call
     {
     observation->GetCallbackCommand()->Execute(
                                       observation->GetSubject(),
-                                      observation->GetEvent(),
+                                      eid,
                                       callData );
     }
 
@@ -886,10 +891,10 @@ void vtkEventBroker::ProcessEventQueue ()
     int finished = 0;
     while ( !finished )
       {
-      void *callData = observation->GetCallDataList()->front();
+      vtkObservation::CallType call = observation->GetCallDataList()->front();
       observation->GetCallDataList()->pop_front();
       finished = (observation->GetCallDataList()->size() == 0);
-      this->InvokeObservation( observation, callData );
+      this->InvokeObservation( observation, call.EventID, call.CallData );
       if ( !observation->GetInEventQueue() )
         {
         observation->GetCallDataList()->clear();
