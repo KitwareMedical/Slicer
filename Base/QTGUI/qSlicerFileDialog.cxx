@@ -31,6 +31,14 @@
 #include "qSlicerIOManager.h"
 #include "qSlicerIOOptionsWidget.h"
 
+// MRML includes
+#include <vtkMRMLNode.h>
+#include <vtkMRMLScene.h>
+
+// VTK includes
+#include <vtkCollection.h>
+#include <vtkNew.h>
+
 /*
 //-----------------------------------------------------------------------------
 class qSlicerFileDialogPrivate
@@ -73,12 +81,19 @@ QStringList qSlicerFileDialog::nameFilters(qSlicerIO::IOFileType fileType)
 }
 
 //-----------------------------------------------------------------------------
+QStringList qSlicerFileDialog::loadedNodes()const
+{
+  return QStringList();
+}
+
+//-----------------------------------------------------------------------------
 class qSlicerStandardFileDialogPrivate
 {
 public:
   qSlicerStandardFileDialogPrivate();
   qSlicerIO::IOFileType       FileType;
   qSlicerFileDialog::IOAction Action;
+  QStringList                 LoadedNodes;
 };
 
 //-----------------------------------------------------------------------------
@@ -127,6 +142,13 @@ qSlicerFileDialog::IOAction qSlicerStandardFileDialog::action()const
 {
   Q_D(const qSlicerStandardFileDialog);
   return d->Action;
+}
+
+//-----------------------------------------------------------------------------
+QStringList qSlicerStandardFileDialog::loadedNodes()const
+{
+  Q_D(const qSlicerStandardFileDialog);
+  return d->LoadedNodes;
 }
 
 //-----------------------------------------------------------------------------
@@ -180,23 +202,55 @@ ctkFileDialog* qSlicerStandardFileDialog::createFileDialog(
 }
 
 //-----------------------------------------------------------------------------
+qSlicerIOOptions* qSlicerStandardFileDialog
+::options(const qSlicerIO::IOProperties& ioProperties)const
+{
+  Q_D(const qSlicerStandardFileDialog);
+  qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
+  // warning: we are responsible for the memory of options
+  qSlicerIOOptions* options = 0;
+  if (d->Action == qSlicerFileDialog::Read)
+    {
+    QStringList fileDescriptions = ioManager->fileDescriptionsByType(this->fileType());
+    options = fileDescriptions.count() ?
+      ioManager->fileOptions(fileDescriptions[0]) : 0;
+    }
+  else if (d->Action == qSlicerFileDialog::Write)
+    {
+    vtkMRMLScene* scene = qSlicerCoreApplication::application()->mrmlScene();
+    vtkMRMLNode* nodeToSave = 0;
+    if (!ioProperties["nodeID"].toString().isEmpty())
+      {
+      nodeToSave = scene->GetNodeByID(ioProperties["nodeID"].toString().toLatin1());
+      }
+    QStringList fileDescriptions =
+      ioManager->fileWriterDescriptions(this->fileType());
+    options = fileDescriptions.count() ?
+      ioManager->fileWriterOptions(nodeToSave, fileDescriptions[0]) : 0;
+    }
+  return options;
+}
+
+//-----------------------------------------------------------------------------
 bool qSlicerStandardFileDialog::exec(const qSlicerIO::IOProperties& ioProperties)
 {
   Q_D(qSlicerStandardFileDialog);
   Q_ASSERT(!ioProperties.contains("fileName"));
 
+  d->LoadedNodes.clear();
+
   qSlicerIO::IOProperties properties = ioProperties;
   properties["fileType"] = d->FileType;
   ctkFileDialog* fileDialog = qSlicerStandardFileDialog::createFileDialog(
                                 properties);
+  QFileDialog::AcceptMode  acceptMode = (d->Action == qSlicerFileDialog::Read) ?
+    QFileDialog::AcceptOpen : QFileDialog::AcceptSave;
+  fileDialog->setAcceptMode(acceptMode);
 
   qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
 
+  qSlicerIOOptions* options = this->options(properties);
   // warning: we are responsible for the memory of options
-  QStringList fileDescriptions =
-    ioManager->fileDescriptionsByType(this->fileType());
-  qSlicerIOOptions* options = fileDescriptions.count() ?
-    ioManager->fileOptions(fileDescriptions[0]) : 0;
   qSlicerIOOptionsWidget* optionsWidget =
     dynamic_cast<qSlicerIOOptionsWidget*>(options);
   // options is not necessary a qSlicerIOOptionsWidget (for the case of
@@ -212,6 +266,11 @@ bool qSlicerStandardFileDialog::exec(const qSlicerIO::IOProperties& ioProperties
     connect(optionsWidget, SIGNAL(validChanged(bool)),
             fileDialog, SLOT(setAcceptButtonEnable(bool)));
     fileDialog->setAcceptButtonEnable(optionsWidget->isValid());
+    }
+
+  if (ioProperties.contains("defaultFileName"))
+    {
+    fileDialog->selectFile(ioProperties["defaultFileName"].toString());
     }
 
   // we do not delete options now as it is still useful later (even if there is
@@ -230,7 +289,16 @@ bool qSlicerStandardFileDialog::exec(const qSlicerIO::IOProperties& ioProperties
       }
     if (d->Action == qSlicerFileDialog::Read)
       {
-      ioManager->loadNodes(this->fileType(), properties);
+      vtkNew<vtkCollection> loadedNodes;
+      ioManager->loadNodes(this->fileType(), properties, loadedNodes.GetPointer());
+      for (int i = 0; i < loadedNodes->GetNumberOfItems();++i)
+        {
+        vtkMRMLNode* node = vtkMRMLNode::SafeDownCast(loadedNodes->GetItemAsObject(i));
+        if (node)
+          {
+          d->LoadedNodes << node->GetID();
+          }
+        }
       }
     else if(d->Action == qSlicerFileDialog::Write)
       {
@@ -253,6 +321,7 @@ bool qSlicerStandardFileDialog::exec(const qSlicerIO::IOProperties& ioProperties
     delete options;
     options = 0;
     }
+
   delete fileDialog;
   return res;
 }
