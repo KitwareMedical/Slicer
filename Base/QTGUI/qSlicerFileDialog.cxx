@@ -243,9 +243,10 @@ bool qSlicerStandardFileDialog::exec(const qSlicerIO::IOProperties& ioProperties
   properties["fileType"] = d->FileType;
   ctkFileDialog* fileDialog = qSlicerStandardFileDialog::createFileDialog(
                                 properties);
-  QFileDialog::AcceptMode  acceptMode = (d->Action == qSlicerFileDialog::Read) ?
-    QFileDialog::AcceptOpen : QFileDialog::AcceptSave;
-  fileDialog->setAcceptMode(acceptMode);
+  if (d->Action == qSlicerFileDialog::Write)
+    {
+    fileDialog->setAcceptMode(QFileDialog::AcceptSave);
+    }
 
   qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
 
