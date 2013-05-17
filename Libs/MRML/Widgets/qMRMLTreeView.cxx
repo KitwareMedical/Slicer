@@ -861,6 +861,7 @@ void qMRMLTreeView::loadTreeExpandState()
       this->expand(nodeIndex);
       }
     }
+  iter->Delete();
   // Clear the vtkCollection now
   d->ExpandedNodes->RemoveAllItems();
 }
