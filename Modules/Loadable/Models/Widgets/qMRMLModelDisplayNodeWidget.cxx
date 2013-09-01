@@ -65,6 +65,10 @@ void qMRMLModelDisplayNodeWidgetPrivate::init()
   Q_Q(qMRMLModelDisplayNodeWidget);
   this->setupUi(q);
   
+  // Prevent combobox from doing anything so it doesn't crash on polydata with
+  // string arrays.
+  this->ActiveScalarComboBox->setAttributeTypes(0);
+
   QObject::connect(this->ScalarsVisibilityCheckBox, SIGNAL(toggled(bool)),
                    q, SLOT(setScalarsVisibility(bool)));
   QObject::connect(this->ActiveScalarComboBox, SIGNAL(currentArrayChanged(QString)),
