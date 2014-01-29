@@ -1468,8 +1468,8 @@ void vtkMRMLModelDisplayableManager::SetModelDisplayProperty(vtkMRMLDisplayableN
             actor->GetMapper()->SetScalarModeToUseCellFieldData();
             actor->GetMapper()->SetColorModeToDefault();
             }
-          actor->GetMapper()->UseLookupTableScalarRangeOff();
-          actor->GetMapper()->SetScalarRange(modelDisplayNode->GetScalarRange());
+
+          actor->GetMapper()->UseLookupTableScalarRangeOn();
           }
           //// }
         actor->GetProperty()->SetRepresentation(modelDisplayNode->GetRepresentation());
