@@ -164,6 +164,8 @@ void qMRMLModelDisplayNodeWidget::setActiveScalarName(const QString& arrayName)
     return;
     }
   d->MRMLModelDisplayNode->SetActiveScalarName(arrayName.toLatin1());
+  d->MRMLModelDisplayNode->SetActiveAttributeLocation(
+    d->ActiveScalarComboBox->currentArrayLocation());
 }
 
 //------------------------------------------------------------------------------
