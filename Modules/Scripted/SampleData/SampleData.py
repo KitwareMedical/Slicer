@@ -26,6 +26,7 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. Se
       slicer.mrmlScene.RegisterNodeClass(vtkMRMLScriptedModuleNode())
 
     # Trigger the menu to be added when application has started up
+    self.menuAction = None
     if not slicer.app.commandOptions().noMainWindow :
       qt.QTimer.singleShot(0, self.addMenu);
 
@@ -38,17 +39,26 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community. Se
 
 
   def addMenu(self):
+    if self.parent.hidden:
+      return
     actionIcon = self.parent.icon
-    a = qt.QAction(actionIcon, 'Download Sample Data', slicer.util.mainWindow())
-    a.setToolTip('Go to the SampleData module to download data from the network')
-    a.connect('triggered()', self.select)
+    self.menuAction = qt.QAction(actionIcon, 'Download Sample Data', slicer.util.mainWindow())
+    self.menuAction.setToolTip('Go to the SampleData module to download data from the network')
+    self.menuAction.connect('triggered()', self.select)
 
     menuFile = slicer.util.lookupTopLevelWidget('menuFile')
     if menuFile:
       for action in menuFile.actions():
         if action.text == 'Save':
-          menuFile.insertAction(action,a)
+          menuFile.insertAction(action,self.menuAction)
 
+  def removeMenu(self):
+    menuFile = slicer.util.lookupTopLevelWidget('menuFile')
+    if menuFile and self.menuAction != None:
+      menuFile.removeAction(self.menuAction)
+
+  def hide(self):
+    self.removeMenu()
 
   def select(self):
     m = slicer.util.mainWindow()

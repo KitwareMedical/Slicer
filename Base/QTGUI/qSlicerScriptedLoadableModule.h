@@ -83,10 +83,10 @@ public:
   virtual int index() const;
   void setIndex(const int index);
 
-  /// Enable/Disable hide state of the module
-  /// Needs to be hidden before the module menu is created.
+  /// Enable/Disable hide state of the module. If hidden, the module won't be
+  /// visible in the modules menu list.
   virtual bool isHidden()const;
-  void setHidden(bool hidden);
+  virtual void setHidden(bool hidden);
 
 protected:
 

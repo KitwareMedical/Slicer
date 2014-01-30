@@ -59,13 +59,14 @@ public:
   int Index;
 
   enum {
-    SetupMethod = 0
+    SetupMethod = 0,
+    HideMethod
     };
 
   static int          APIMethodCount;
-  static const char * APIMethodNames[1];
+  static const char * APIMethodNames[2];
 
-  PyObject*  PythonAPIMethods[1];
+  PyObject*  PythonAPIMethods[2];
   PyObject * PythonSelf;
   QString    PythonSource;
 };
@@ -74,12 +75,12 @@ public:
 // qSlicerScriptedLoadableModulePrivate methods
 
 //---------------------------------------------------------------------------
-int qSlicerScriptedLoadableModulePrivate::APIMethodCount = 1;
+int qSlicerScriptedLoadableModulePrivate::APIMethodCount = 2;
 
 //---------------------------------------------------------------------------
-const char* qSlicerScriptedLoadableModulePrivate::APIMethodNames[1] =
+const char* qSlicerScriptedLoadableModulePrivate::APIMethodNames[2] =
 {
-  "setup"
+  "setup", "hide"
 };
 
 //-----------------------------------------------------------------------------
@@ -349,7 +350,19 @@ CTK_SET_CPP(qSlicerScriptedLoadableModule, const QIcon&, setIcon, Icon)
 CTK_GET_CPP(qSlicerScriptedLoadableModule, QIcon, icon, Icon)
 
 //-----------------------------------------------------------------------------
-CTK_SET_CPP(qSlicerScriptedLoadableModule, bool, setHidden, Hidden)
+void qSlicerScriptedLoadableModule::setHidden(bool hide)
+{
+  Q_D(qSlicerScriptedLoadableModule);
+  d->Hidden = hide;
+  PyObject * method = d->PythonAPIMethods[Pimpl::HideMethod];
+  if (!method)
+    {
+    return;
+    }
+  PythonQt::self()->clearError();
+  PyObject_CallObject(method, 0);
+  PythonQt::self()->handleError();
+}
 CTK_GET_CPP(qSlicerScriptedLoadableModule, bool, isHidden, Hidden)
 
 //-----------------------------------------------------------------------------
