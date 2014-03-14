@@ -50,7 +50,7 @@ qSlicerAbstractCoreModule* qSlicerCLIExecutableModuleFactoryItem::instanciator()
 
   ctkScopedCurrentDir scopedCurrentDir(QFileInfo(this->path()).path());
 
-  int cliProcessTimeoutInMs = 5000;
+  int cliProcessTimeoutInMs = 10000;
   QProcess cli;
   QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
   env.insert("ITK_AUTOLOAD_PATH", "");
