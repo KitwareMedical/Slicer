@@ -58,6 +58,13 @@ const qSlicerIO::IOProperties& qSlicerIOOptions::properties()const
 }
 
 //------------------------------------------------------------------------------
+void qSlicerIOOptions::setProperties(const qSlicerIO::IOProperties& properties)
+{
+  Q_D(qSlicerIOOptions);
+  d->Properties = properties;
+}
+
+//------------------------------------------------------------------------------
 void qSlicerIOOptions::updateValid()
 {
   Q_D(qSlicerIOOptions);

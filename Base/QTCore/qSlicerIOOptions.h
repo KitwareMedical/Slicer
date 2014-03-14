@@ -42,6 +42,7 @@ public:
   virtual bool isValid()const;
 
   const qSlicerIO::IOProperties& properties()const;
+  virtual void setProperties(const qSlicerIO::IOProperties& properties);
 protected:
   qSlicerIOOptions(qSlicerIOOptionsPrivate* pimpl);
   QScopedPointer<qSlicerIOOptionsPrivate> d_ptr;

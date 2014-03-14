@@ -255,6 +255,10 @@ qSlicerIOOptions* qSlicerStandardFileDialog
     options = fileDescriptions.count() ?
       ioManager->fileWriterOptions(nodeToSave, fileDescriptions[0]) : 0;
     }
+  if (options)
+    {
+    options->setProperties(ioProperties);
+    }
   return options;
 }
 
