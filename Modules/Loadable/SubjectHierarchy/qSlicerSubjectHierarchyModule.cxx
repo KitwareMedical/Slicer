@@ -22,23 +22,14 @@
 
 // Qt includes
 #include <QtPlugin>
-#include <QDebug>
-#include <QMessageBox>
 
 // SubjectHierarchy includes
 #include "qSlicerSubjectHierarchyModule.h"
 #include "qSlicerSubjectHierarchyModuleWidget.h"
 #include "vtkSlicerSubjectHierarchyModuleLogic.h"
-#include "vtkMRMLSubjectHierarchyNode.h"
 
 // SubjectHierarchy Plugins includes
-#include "qSlicerSubjectHierarchyPluginHandler.h"
-#include "qSlicerSubjectHierarchyDICOMPlugin.h"
-#include "qSlicerSubjectHierarchyCloneNodePlugin.h"
-#include "qSlicerSubjectHierarchyChartsPlugin.h"
-#include "qSlicerSubjectHierarchyParseLocalDataPlugin.h"
-#include "qSlicerSubjectHierarchyRegisterPlugin.h"
-#include "qSlicerSubjectHierarchySegmentPlugin.h"
+#include "qSlicerSubjectHierarchyPluginLogic.h"
 
 // MRML includes
 #include <vtkMRMLScene.h>
@@ -52,8 +43,9 @@ class qSlicerSubjectHierarchyModulePrivate
 {
 public:
   qSlicerSubjectHierarchyModulePrivate();
+  ~qSlicerSubjectHierarchyModulePrivate();
 
-  bool DeleteBranchInProgress;
+  qSlicerSubjectHierarchyPluginLogic* PluginLogic;
 };
 
 //-----------------------------------------------------------------------------
@@ -61,8 +53,18 @@ public:
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyModulePrivate::qSlicerSubjectHierarchyModulePrivate()
+  : PluginLogic(NULL)
 {
-  this->DeleteBranchInProgress = false;
+}
+
+//-----------------------------------------------------------------------------
+qSlicerSubjectHierarchyModulePrivate::~qSlicerSubjectHierarchyModulePrivate()
+{
+  if (this->PluginLogic)
+    {
+    delete this->PluginLogic;
+    this->PluginLogic = NULL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -119,176 +121,48 @@ QIcon qSlicerSubjectHierarchyModule::icon()const
 void qSlicerSubjectHierarchyModule::setup()
 {
   this->Superclass::setup();
-
-  // Handle scene change event if occurs
-  qvtkConnect( this->logic(), vtkCommand::ModifiedEvent, this, SLOT( onLogicModified() ) );
-
-  // Connect scene node added event so that the new subject hierarchy nodes can be claimed by a plugin
-  qvtkConnect( this->mrmlScene(), vtkMRMLScene::NodeAddedEvent, this, SLOT( onNodeAdded(vtkObject*,vtkObject*) ) );
-  // Connect scene node added event so that the associated subject hierarchy node can be deleted too
-  qvtkConnect( this->mrmlScene(), vtkMRMLScene::NodeAboutToBeRemovedEvent, this, SLOT( onNodeAboutToBeRemoved(vtkObject*,vtkObject*) ) );
-
-  // Register Subject Hierarchy core plugins
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyDICOMPlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyCloneNodePlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyChartsPlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyParseLocalDataPlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyRegisterPlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchySegmentPlugin());
 }
 
 //-----------------------------------------------------------------------------
 vtkMRMLAbstractLogic* qSlicerSubjectHierarchyModule::createLogic()
 {
-  return vtkSlicerSubjectHierarchyModuleLogic::New();
+  Q_D(qSlicerSubjectHierarchyModule);
+
+  // Create logic
+  vtkSlicerSubjectHierarchyModuleLogic* logic = vtkSlicerSubjectHierarchyModuleLogic::New();
+  // Handle scene change event if occurs
+  qvtkConnect( logic, vtkCommand::ModifiedEvent, this, SLOT( onLogicModified() ) );
+
+  // Create plugin logic
+  d->PluginLogic = new qSlicerSubjectHierarchyPluginLogic();
+
+  return logic;
 }
 
 //-----------------------------------------------------------------------------
 qSlicerAbstractModuleRepresentation* qSlicerSubjectHierarchyModule::createWidgetRepresentation()
 {
-  return new qSlicerSubjectHierarchyModuleWidget;
+  Q_D(qSlicerSubjectHierarchyModule);
+
+  qSlicerSubjectHierarchyModuleWidget* moduleWidget = new qSlicerSubjectHierarchyModuleWidget();
+  if (!d->PluginLogic)
+    {
+    this->createLogic();
+    }
+  moduleWidget->setPluginLogic(d->PluginLogic);
+
+  return moduleWidget;
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerSubjectHierarchyModule::onLogicModified()
 {
-  vtkMRMLScene* scene = this->mrmlScene();
-  vtkMRMLScene* currentScene = qSlicerSubjectHierarchyPluginHandler::instance()->scene();
-
-  if (scene != currentScene)
-    {
-    // Set the new scene to the plugin handler
-    qSlicerSubjectHierarchyPluginHandler::instance()->setScene(scene);
-
-    // Connect scene node added event so that the new subject hierarchy nodes can be claimed by a plugin
-    qvtkReconnect( scene, vtkMRMLScene::NodeAddedEvent, this, SLOT( onNodeAdded(vtkObject*,vtkObject*) ) );
-    // Connect scene node added event so that the associated subject hierarchy node can be deleted too
-    qvtkReconnect( scene, vtkMRMLScene::NodeAboutToBeRemovedEvent, this, SLOT( onNodeAboutToBeRemoved(vtkObject*,vtkObject*) ) );
-    }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerSubjectHierarchyModule::onNodeAdded(vtkObject* sceneObject, vtkObject* nodeObject)
-{
-  vtkMRMLScene* scene = vtkMRMLScene::SafeDownCast(sceneObject);
-  if (!scene)
-    {
-    return;
-    }
-
-  vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(nodeObject);
-  if (subjectHierarchyNode)
-    {
-    // Keep 'owner plugin changed' connections up-to date (reconnect to the new plugin)
-    qvtkConnect( subjectHierarchyNode, vtkMRMLSubjectHierarchyNode::OwnerPluginChangedEvent,
-      qSlicerSubjectHierarchyPluginHandler::instance(), SLOT( reconnectOwnerPluginChanged(vtkObject*,void*) ) );
-
-    // Find plugin for current subject hierarchy node and "claim" it
-    if (!scene->IsImporting())
-      {
-      qSlicerSubjectHierarchyPluginHandler::instance()->findAndSetOwnerPluginForSubjectHierarchyNode(subjectHierarchyNode);
-      }
-
-    // See if owner plugin has to be changed when a note is modified
-    qvtkConnect( subjectHierarchyNode, vtkCommand::ModifiedEvent, this, SLOT( onSubjectHierarchyNodeModified(vtkObject*) ) );
-    }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerSubjectHierarchyModule::onNodeAboutToBeRemoved(vtkObject* sceneObject, vtkObject* nodeObject)
-{
-  vtkMRMLScene* scene = vtkMRMLScene::SafeDownCast(sceneObject);
-  if (!scene)
-    {
-    return;
-    }
-
-  // Do nothing if scene is closing
-  if (scene->IsClosing())
-    {
-    return;
-    }
-
   Q_D(qSlicerSubjectHierarchyModule);
 
-  vtkMRMLNode* dataNode = vtkMRMLNode::SafeDownCast(nodeObject);
-  vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(nodeObject);
-
-  if (subjectHierarchyNode)
+  vtkMRMLScene* scene = this->mrmlScene();
+  if (d->PluginLogic && scene != d->PluginLogic->mrmlScene())
     {
-    // Remove associated data node if any
-    vtkMRMLNode* associatedDataNode = subjectHierarchyNode->GetAssociatedNode();
-    if (associatedDataNode && !subjectHierarchyNode->GetDisableModifiedEvent())
-      {
-      subjectHierarchyNode->DisableModifiedEventOn();
-      subjectHierarchyNode->SetAssociatedNodeID(NULL);
-      scene->RemoveNode(associatedDataNode);
-      }
-
-    // Check if node has children and ask if branch is to be removed
-    std::vector<vtkMRMLHierarchyNode*> childrenNodes;
-    subjectHierarchyNode->GetAllChildrenNodes(childrenNodes);
-    if (!childrenNodes.empty() && !d->DeleteBranchInProgress)
-      {
-      QMessageBox::StandardButton answer =
-        QMessageBox::question(NULL, tr("Delete branch?"),
-        tr("The deleted node has children. Do you want to remove those too?\n\nIf you choose yes, the whole branch will be deleted recursively."),
-        QMessageBox::Yes | QMessageBox::No,
-        QMessageBox::No);
-      // Delete branch if the user chose yes
-      if (answer == QMessageBox::Yes)
-        {
-        d->DeleteBranchInProgress = true;
-        for (std::vector<vtkMRMLHierarchyNode*>::iterator childrenIt = childrenNodes.begin();
-          childrenIt != childrenNodes.end(); ++childrenIt)
-          {
-          scene->RemoveNode(*childrenIt);
-          }
-        d->DeleteBranchInProgress = false;
-        }
-      }
-    }
-  else if (dataNode)
-    {
-    // Remove associated subject hierarchy node if any
-    vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::GetAssociatedSubjectHierarchyNode(dataNode, scene);
-    if (subjectHierarchyNode)
-      {
-      subjectHierarchyNode->DisableModifiedEventOn();
-      subjectHierarchyNode->SetAssociatedNodeID(NULL);
-      scene->RemoveNode(subjectHierarchyNode);
-      }
-    // Remove associated other hierarchy node if any (if there is a nested association)
-    vtkMRMLHierarchyNode* hierarchyNode = vtkMRMLHierarchyNode::GetAssociatedHierarchyNode(scene, dataNode->GetID());
-    if (hierarchyNode)
-      {
-      scene->RemoveNode(hierarchyNode);
-      }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerSubjectHierarchyModule::onSubjectHierarchyNodeModified(vtkObject* nodeObject)
-{
-  vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(nodeObject);
-  if (subjectHierarchyNode && subjectHierarchyNode->GetOwnerPluginAutoSearch())
-    {
-    // Find plugin for current subject hierarchy node and "claim" it if the
-    // owner plugin is not manually overridden by the user
-    QString pluginBefore( subjectHierarchyNode->GetOwnerPluginName() );
-    qSlicerSubjectHierarchyPluginHandler::instance()->findAndSetOwnerPluginForSubjectHierarchyNode(subjectHierarchyNode);
-    QString pluginAfter( subjectHierarchyNode->GetOwnerPluginName() );
-    //if (pluginBefore.compare(pluginAfter))
-    //  {
-    //  qDebug() << "qSlicerSubjectHierarchyModule::onSubjectHierarchyNodeModified: Subject hierarchy node '" <<
-    //    subjectHierarchyNode->GetName() << "' has been modified, plugin search performed, and owner plugin changed from '" <<
-    //    pluginBefore << "' to '" << pluginAfter << "'";
-    //  }
+    // Set the new scene to the plugin logic
+    d->PluginLogic->setMRMLScene(scene);
     }
 }

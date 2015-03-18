@@ -45,31 +45,26 @@ if(NOT APPLE)
     include(${Slicer_CMAKE_DIR}/SlicerBlockInstallLibArchive.cmake)
   endif()
   include(InstallRequiredSystemLibraries)
+
+  # XXX: Remove this once CMake minimum version has been updated.
+  #      See Slicer issue #3972 and CMake issue #15428
+  if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+    if(NOT CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP)
+      if(NOT CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION)
+        if(WIN32)
+          set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION bin)
+        else()
+          set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION lib)
+        endif()
+      endif()
+      install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+        DESTINATION ${CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION}
+        COMPONENT RuntimeLibraries)
+    endif()
+  endif()
+
   include(${Slicer_CMAKE_DIR}/SlicerBlockInstallCMakeProjects.cmake)
 
-  macro(_remove_installed_dir dir_to_remove)
-    set(_code "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E remove_directory")
-    set(_code "${_code} \"${dollar}{CMAKE_INSTALL_PREFIX}/${Slicer_INSTALL_ROOT}${dir_to_remove}\")")
-    install(CODE "${_code}" COMPONENT Runtime)
-  endmacro()
-
-  if(Slicer_INSTALL_NO_DEVELOPMENT)
-    # Remove development files installed by teem. Ideally, teem project itself should be updated.
-    # See http://na-mic.org/Mantis/view.php?id=3455
-    set(dollar "$")
-    _remove_installed_dir("include/teem")
-    foreach(file
-      lib/Teem-1.10.0/TeemBuildSettings.cmake
-      lib/Teem-1.10.0/TeemConfig.cmake
-      lib/Teem-1.10.0/TeemLibraryDepends.cmake
-      lib/Teem-1.10.0/TeemUse.cmake
-      )
-      install(
-        CODE "execute_process(COMMAND \"${CMAKE_COMMAND}\" -E remove \"${dollar}{CMAKE_INSTALL_PREFIX}/${Slicer_INSTALL_ROOT}${file}\")"
-        COMPONENT Runtime
-        )
-    endforeach()
-  endif()
 else()
 
   set(CMAKE_INSTALL_NAME_TOOL "" CACHE FILEPATH "" FORCE)
@@ -150,7 +145,7 @@ set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${Slicer_BINAR
 set(CPACK_MONOLITHIC_INSTALL ON)
 
 set(Slicer_CPACK_PACKAGE_NAME ${SlicerApp_APPLICATION_NAME})
-set(Slicer_CPACK_PACKAGE_VENDOR "NA-MIC")
+set(Slicer_CPACK_PACKAGE_VENDOR ${Slicer_ORGANIZATION_NAME})
 set(Slicer_CPACK_PACKAGE_DESCRIPTION_FILE "${Slicer_SOURCE_DIR}/README.txt")
 set(Slicer_CPACK_PACKAGE_DESCRIPTION_SUMMARY
   "Medical Visualization and Processing Environment for Research")
@@ -160,25 +155,37 @@ set(Slicer_CPACK_PACKAGE_VERSION_MINOR "${Slicer_VERSION_MINOR}")
 set(Slicer_CPACK_PACKAGE_VERSION_PATCH "${Slicer_VERSION_PATCH}")
 set(Slicer_CPACK_PACKAGE_VERSION "${Slicer_VERSION_FULL}")
 set(Slicer_CPACK_PACKAGE_ICON "${Slicer_SOURCE_DIR}/Resources/Slicer.icns")
+set(Slicer_CPACK_PACKAGE_INSTALL_DIRECTORY "${Slicer_CPACK_PACKAGE_NAME} ${Slicer_CPACK_PACKAGE_VERSION}")
 
 set(project ${${Slicer_MAIN_PROJECT}_APPLICATION_NAME})
 
-set(CPACK_PACKAGE_NAME ${${project}_CPACK_PACKAGE_NAME})
-set(CPACK_PACKAGE_VENDOR ${${project}_CPACK_PACKAGE_VENDOR})
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${${project}_CPACK_PACKAGE_DESCRIPTION_SUMMARY})
-set(CPACK_PACKAGE_DESCRIPTION_FILE ${${project}_CPACK_PACKAGE_DESCRIPTION_FILE})
-set(CPACK_RESOURCE_FILE_LICENSE ${${project}_CPACK_RESOURCE_FILE_LICENSE})
-set(CPACK_PACKAGE_VERSION_MAJOR ${${project}_CPACK_PACKAGE_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${${project}_CPACK_PACKAGE_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${${project}_CPACK_PACKAGE_VERSION_PATCH})
-set(CPACK_PACKAGE_VERSION ${${project}_CPACK_PACKAGE_VERSION})
+macro(slicer_cpack_set varname)
+  if(DEFINED ${project}_${varname})
+    set(${varname} ${${project}_${varname}})
+  elseif(DEFINED Slicer_${varname})
+    set(${varname} ${Slicer_${varname}})
+  else()
+    message(FATAL_ERROR "Failed to set variable ${varname}."
+                        "Neither Slicer_${varname} or ${project}_${varname} are defined.")
+  endif()
+  message(STATUS "Setting ${varname} to '${${varname}}'")
+endmacro()
+
+slicer_cpack_set("CPACK_PACKAGE_NAME")
+slicer_cpack_set("CPACK_PACKAGE_VENDOR")
+slicer_cpack_set("CPACK_PACKAGE_DESCRIPTION_SUMMARY")
+slicer_cpack_set("CPACK_PACKAGE_DESCRIPTION_FILE")
+slicer_cpack_set("CPACK_RESOURCE_FILE_LICENSE")
+slicer_cpack_set("CPACK_PACKAGE_VERSION_MAJOR")
+slicer_cpack_set("CPACK_PACKAGE_VERSION_MINOR")
+slicer_cpack_set("CPACK_PACKAGE_VERSION_PATCH")
+slicer_cpack_set("CPACK_PACKAGE_VERSION")
 set(CPACK_SYSTEM_NAME "${Slicer_OS}-${Slicer_ARCHITECTURE}")
+slicer_cpack_set("CPACK_PACKAGE_INSTALL_DIRECTORY")
 
 if(APPLE)
-  set(CPACK_PACKAGE_ICON ${${project}_CPACK_PACKAGE_ICON})
+  slicer_cpack_set("CPACK_PACKAGE_ICON")
 endif()
-
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
 
 # Installers for 32- vs. 64-bit CMake:
 #  - Root install directory (displayed to end user at installer-run time)
@@ -187,11 +194,11 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSI
 if(CMAKE_CL_64)
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES64")
   set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
-  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION} (Win64)")
+  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_INSTALL_DIRECTORY} (Win64)")
 else()
   set(CPACK_NSIS_INSTALL_ROOT "$PROGRAMFILES")
   set(CPACK_NSIS_PACKAGE_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} (Win32)")
-  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
+  set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "${CPACK_PACKAGE_INSTALL_DIRECTORY}")
 endif()
 
 # Slicer does *NOT* require setting the windows path

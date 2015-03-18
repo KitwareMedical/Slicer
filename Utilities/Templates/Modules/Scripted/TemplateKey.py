@@ -2,12 +2,17 @@ import os
 import unittest
 from __main__ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
+import logging
 
 #
 # TemplateKey
 #
 
 class TemplateKey(ScriptedLoadableModule):
+  """Uses ScriptedLoadableModule base class, available at:
+  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
+  """
+
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
     self.parent.title = "TemplateKey" # TODO make this more human readable by adding spaces
@@ -16,6 +21,7 @@ class TemplateKey(ScriptedLoadableModule):
     self.parent.contributors = ["John Doe (AnyWare Corp.)"] # replace with "Firstname Lastname (Organization)"
     self.parent.helpText = """
     This is an example of scripted loadable module bundled in an extension.
+    It performs a simple thresholding on the input volume and optionally captures a screenshot.
     """
     self.parent.acknowledgementText = """
     This file was originally developed by Jean-Christophe Fillion-Robin, Kitware Inc.
@@ -26,10 +32,14 @@ class TemplateKey(ScriptedLoadableModule):
 # TemplateKeyWidget
 #
 
-class TemplateKeyWidget(ScriptedLoadableModuleWidget)::
+class TemplateKeyWidget(ScriptedLoadableModuleWidget):
+  """Uses ScriptedLoadableModuleWidget base class, available at:
+  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
+  """
 
   def setup(self):
     ScriptedLoadableModuleWidget.setup(self)
+
     # Instantiate and connect widgets ...
 
     #
@@ -64,15 +74,26 @@ class TemplateKeyWidget(ScriptedLoadableModuleWidget)::
     self.outputSelector = slicer.qMRMLNodeComboBox()
     self.outputSelector.nodeTypes = ( ("vtkMRMLScalarVolumeNode"), "" )
     self.outputSelector.addAttribute( "vtkMRMLScalarVolumeNode", "LabelMap", 0 )
-    self.outputSelector.selectNodeUponCreation = False
+    self.outputSelector.selectNodeUponCreation = True
     self.outputSelector.addEnabled = True
     self.outputSelector.removeEnabled = True
-    self.outputSelector.noneEnabled = False
+    self.outputSelector.noneEnabled = True
     self.outputSelector.showHidden = False
     self.outputSelector.showChildNodeTypes = False
     self.outputSelector.setMRMLScene( slicer.mrmlScene )
     self.outputSelector.setToolTip( "Pick the output to the algorithm." )
     parametersFormLayout.addRow("Output Volume: ", self.outputSelector)
+
+    #
+    # threshold value
+    #
+    self.imageThresholdSliderWidget = ctk.ctkSliderWidget()
+    self.imageThresholdSliderWidget.singleStep = 0.1
+    self.imageThresholdSliderWidget.minimum = -100
+    self.imageThresholdSliderWidget.maximum = 100
+    self.imageThresholdSliderWidget.value = 0.5
+    self.imageThresholdSliderWidget.setToolTip("Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.")
+    parametersFormLayout.addRow("Image threshold", self.imageThresholdSliderWidget)
 
     #
     # check box to trigger taking screen shots for later use in tutorials
@@ -81,17 +102,6 @@ class TemplateKeyWidget(ScriptedLoadableModuleWidget)::
     self.enableScreenshotsFlagCheckBox.checked = 0
     self.enableScreenshotsFlagCheckBox.setToolTip("If checked, take screen shots for tutorials. Use Save Data to write them to disk.")
     parametersFormLayout.addRow("Enable Screenshots", self.enableScreenshotsFlagCheckBox)
-
-    #
-    # scale factor for screen shots
-    #
-    self.screenshotScaleFactorSliderWidget = ctk.ctkSliderWidget()
-    self.screenshotScaleFactorSliderWidget.singleStep = 1.0
-    self.screenshotScaleFactorSliderWidget.minimum = 1.0
-    self.screenshotScaleFactorSliderWidget.maximum = 50.0
-    self.screenshotScaleFactorSliderWidget.value = 1.0
-    self.screenshotScaleFactorSliderWidget.setToolTip("Set scale factor for the screen shots.")
-    parametersFormLayout.addRow("Screenshot scale factor", self.screenshotScaleFactorSliderWidget)
 
     #
     # Apply Button
@@ -109,6 +119,9 @@ class TemplateKeyWidget(ScriptedLoadableModuleWidget)::
     # Add vertical spacer
     self.layout.addStretch(1)
 
+    # Refresh Apply button state
+    self.onSelect()
+
   def cleanup(self):
     pass
 
@@ -118,10 +131,8 @@ class TemplateKeyWidget(ScriptedLoadableModuleWidget)::
   def onApplyButton(self):
     logic = TemplateKeyLogic()
     enableScreenshotsFlag = self.enableScreenshotsFlagCheckBox.checked
-    screenshotScaleFactor = int(self.screenshotScaleFactorSliderWidget.value)
-    print("Run the algorithm")
-    logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), enableScreenshotsFlag,screenshotScaleFactor)
-
+    imageThreshold = self.imageThresholdSliderWidget.value
+    logic.run(self.inputSelector.currentNode(), self.outputSelector.currentNode(), imageThreshold, enableScreenshotsFlag)
 
 #
 # TemplateKeyLogic
@@ -132,50 +143,65 @@ class TemplateKeyLogic(ScriptedLoadableModuleLogic):
   computation done by your module.  The interface
   should be such that other python code can import
   this class and make use of the functionality without
-  requiring an instance of the Widget
+  requiring an instance of the Widget.
+  Uses ScriptedLoadableModuleLogic base class, available at:
+  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
   def hasImageData(self,volumeNode):
-    """This is a dummy logic method that
+    """This is an example logic method that
     returns true if the passed in volume
     node has valid image data
     """
     if not volumeNode:
-      print('no volume node')
+      logging.debug('hasImageData failed: no volume node')
       return False
     if volumeNode.GetImageData() == None:
-      print('no image data')
+      logging.debug('hasImageData failed: no image data in volume node')
+      return False
+    return True
+
+  def isValidInputOutputData(self, inputVolumeNode, outputVolumeNode):
+    """Validates if the output is not the same as input
+    """
+    if not inputVolumeNode:
+      logging.debug('isValidInputOutputData failed: no input volume node defined')
+      return False
+    if not outputVolumeNode:
+      logging.debug('isValidInputOutputData failed: no output volume node defined')
+      return False
+    if inputVolumeNode.GetID()==outputVolumeNode.GetID():
+      logging.debug('isValidInputOutputData failed: input and output volume is the same. Create a new volume for output to avoid this error.')
       return False
     return True
 
   def takeScreenshot(self,name,description,type=-1):
     # show the message even if not taking a screen shot
-    self.delayDisplay(description)
-
-    if self.enableScreenshots == 0:
-      return
+    slicer.util.delayDisplay('Take screenshot: '+description+'.\nResult is available in the Annotations module.', 3000)
 
     lm = slicer.app.layoutManager()
     # switch on the type to get the requested window
     widget = 0
-    if type == -1:
-      # full window
-      widget = slicer.util.mainWindow()
-    elif type == slicer.qMRMLScreenShotDialog().FullLayout:
+    if type == slicer.qMRMLScreenShotDialog.FullLayout:
       # full layout
       widget = lm.viewport()
-    elif type == slicer.qMRMLScreenShotDialog().ThreeD:
+    elif type == slicer.qMRMLScreenShotDialog.ThreeD:
       # just the 3D window
       widget = lm.threeDWidget(0).threeDView()
-    elif type == slicer.qMRMLScreenShotDialog().Red:
+    elif type == slicer.qMRMLScreenShotDialog.Red:
       # red slice window
       widget = lm.sliceWidget("Red")
-    elif type == slicer.qMRMLScreenShotDialog().Yellow:
+    elif type == slicer.qMRMLScreenShotDialog.Yellow:
       # yellow slice window
       widget = lm.sliceWidget("Yellow")
-    elif type == slicer.qMRMLScreenShotDialog().Green:
+    elif type == slicer.qMRMLScreenShotDialog.Green:
       # green slice window
       widget = lm.sliceWidget("Green")
+    else:
+      # default to using the full window
+      widget = slicer.util.mainWindow()
+      # reset the type so that the node is set correctly
+      type = slicer.qMRMLScreenShotDialog.FullLayout
 
     # grab and convert to vtk image data
     qpixMap = qt.QPixmap().grabWidget(widget)
@@ -184,19 +210,28 @@ class TemplateKeyLogic(ScriptedLoadableModuleLogic):
     slicer.qMRMLUtils().qImageToVtkImageData(qimage,imageData)
 
     annotationLogic = slicer.modules.annotations.logic()
-    annotationLogic.CreateSnapShot(name, description, type, self.screenshotScaleFactor, imageData)
+    annotationLogic.CreateSnapShot(name, description, type, 1, imageData)
 
-  def run(self,inputVolume,outputVolume,enableScreenshots=0,screenshotScaleFactor=1):
+  def run(self, inputVolume, outputVolume, imageThreshold, enableScreenshots=0):
     """
     Run the actual algorithm
     """
 
-    self.delayDisplay('Running the aglorithm')
+    if not self.isValidInputOutputData(inputVolume, outputVolume):
+      slicer.util.errorDisplay('Input volume is the same as output volume. Choose a different output volume.')
+      return False
 
-    self.enableScreenshots = enableScreenshots
-    self.screenshotScaleFactor = screenshotScaleFactor
+    logging.info('Processing started')
 
-    self.takeScreenshot('TemplateKey-Start','Start',-1)
+    # Compute the thresholded output volume using the Threshold Scalar Volume CLI module
+    cliParams = {'InputVolume': inputVolume.GetID(), 'OutputVolume': outputVolume.GetID(), 'ThresholdValue' : imageThreshold, 'ThresholdType' : 'Above'}
+    cliNode = slicer.cli.run(slicer.modules.thresholdscalarvolume, None, cliParams, wait_for_completion=True)
+
+    # Capture screenshot
+    if enableScreenshots:
+      self.takeScreenshot('TemplateKeyTest-Start','MyScreenshot',-1)
+
+    logging.info('Processing completed')
 
     return True
 
@@ -204,6 +239,8 @@ class TemplateKeyLogic(ScriptedLoadableModuleLogic):
 class TemplateKeyTest(ScriptedLoadableModuleTest):
   """
   This is the test case for your scripted module.
+  Uses ScriptedLoadableModuleTest base class, available at:
+  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
   def setUp(self):
@@ -219,7 +256,7 @@ class TemplateKeyTest(ScriptedLoadableModuleTest):
 
   def test_TemplateKey1(self):
     """ Ideally you should have several levels of tests.  At the lowest level
-    tests sould exercise the functionality of the logic with different inputs
+    tests should exercise the functionality of the logic with different inputs
     (both valid and invalid).  At higher levels your tests should emulate the
     way the user would interact with your code and confirm that it still works
     the way you intended.
@@ -241,12 +278,12 @@ class TemplateKeyTest(ScriptedLoadableModuleTest):
     for url,name,loader in downloads:
       filePath = slicer.app.temporaryPath + '/' + name
       if not os.path.exists(filePath) or os.stat(filePath).st_size == 0:
-        print('Requesting download %s from %s...\n' % (name, url))
+        logging.info('Requesting download %s from %s...\n' % (name, url))
         urllib.urlretrieve(url, filePath)
       if loader:
-        print('Loading %s...\n' % (name,))
+        logging.info('Loading %s...' % (name,))
         loader(filePath)
-    self.delayDisplay('Finished with download and loading\n')
+    self.delayDisplay('Finished with download and loading')
 
     volumeNode = slicer.util.getNode(pattern="FA")
     logic = TemplateKeyLogic()

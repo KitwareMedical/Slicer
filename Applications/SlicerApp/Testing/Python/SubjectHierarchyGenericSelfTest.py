@@ -1,13 +1,15 @@
 import os
 import unittest
 from __main__ import vtk, qt, ctk, slicer
+from slicer.ScriptedLoadableModule import *
 
 #
 # SubjectHierarchyGenericSelfTest
 #
 
-class SubjectHierarchyGenericSelfTest:
+class SubjectHierarchyGenericSelfTest(ScriptedLoadableModule):
   def __init__(self, parent):
+    ScriptedLoadableModule.__init__(self, parent)
     parent.title = "SubjectHierarchyGenericSelfTest"
     parent.categories = ["Testing.TestCases"]
     parent.dependencies = ["SubjectHierarchy", "DICOM"]
@@ -35,59 +37,16 @@ class SubjectHierarchyGenericSelfTest:
 # SubjectHierarchyGenericSelfTestWidget
 #
 
-class SubjectHierarchyGenericSelfTestWidget:
-  def __init__(self, parent = None):
-    if not parent:
-      self.parent = slicer.qMRMLWidget()
-      self.parent.setLayout(qt.QVBoxLayout())
-      self.parent.setMRMLScene(slicer.mrmlScene)
-    else:
-      self.parent = parent
-    self.layout = self.parent.layout()
-    if not parent:
-      self.setup()
-      self.parent.show()
-
+class SubjectHierarchyGenericSelfTestWidget(ScriptedLoadableModuleWidget):
   def setup(self):
-    # Instantiate and connect widgets ...
-
-    # reload button
-    # (use this during development, but remove it when delivering
-    #  your module to users)
-    self.reloadButton = qt.QPushButton("Reload")
-    self.reloadButton.toolTip = "Reload this module."
-    self.reloadButton.name = "SubjectHierarchyGenericSelfTest Reload"
-    self.layout.addWidget(self.reloadButton)
-    self.reloadButton.connect('clicked()', self.onReload)
-
-    # reload and test button
-    # (use this during development, but remove it when delivering
-    #  your module to users)
-    self.reloadAndTestButton = qt.QPushButton("Reload and Test")
-    self.reloadAndTestButton.toolTip = "Reload this module and then run the self tests."
-    self.layout.addWidget(self.reloadAndTestButton)
-    self.reloadAndTestButton.connect('clicked()', self.onReloadAndTest)
-
-    # Add vertical spacer
-    self.layout.addStretch(1)
-
-  def onReload(self,moduleName="SubjectHierarchyGenericSelfTest"):
-    """Generic reload method for any scripted module.
-    ModuleWizard will subsitute correct default moduleName.
-    """
-    globals()[moduleName] = slicer.util.reloadScriptedModule(moduleName)
-
-  def onReloadAndTest(self,moduleName="SubjectHierarchyGenericSelfTest"):
-    self.onReload()
-    evalString = 'globals()["%s"].%sTest()' % (moduleName, moduleName)
-    tester = eval(evalString)
-    tester.runTest()
+    self.developerMode = True
+    ScriptedLoadableModuleWidget.setup(self)
 
 #
 # SubjectHierarchyGenericSelfTestLogic
 #
 
-class SubjectHierarchyGenericSelfTestLogic:
+class SubjectHierarchyGenericSelfTestLogic(ScriptedLoadableModuleLogic):
   """This class should implement all the actual
   computation done by your module.  The interface
   should be such that other python code can import
@@ -98,27 +57,10 @@ class SubjectHierarchyGenericSelfTestLogic:
     pass
 
 
-class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
+class SubjectHierarchyGenericSelfTestTest(ScriptedLoadableModuleTest):
   """
   This is the test case for your scripted module.
   """
-
-  def delayDisplay(self,message,msec=1000):
-    """This utility method displays a small dialog and waits.
-    This does two things: 1) it lets the event loop catch up
-    to the state of the test so that rendering and widget updates
-    have all taken place before the test continues and 2) it
-    shows the user/developer/tester the state of the test
-    so that we'll know when it breaks.
-    """
-    print(message)
-    self.info = qt.QDialog()
-    self.infoLayout = qt.QVBoxLayout()
-    self.info.setLayout(self.infoLayout)
-    self.label = qt.QLabel(message,self.info)
-    self.infoLayout.addWidget(self.label)
-    qt.QTimer.singleShot(msec, self.info.close)
-    self.info.exec_()
 
   def setUp(self):
     """ Do whatever is needed to reset the state - typically a scene clear will be enough.
@@ -144,11 +86,8 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     # Check for SubjectHierarchy module
     self.assertTrue( slicer.modules.subjecthierarchy )
 
-    # TODO: Uncomment when #598 is fixed
-    slicer.util.selectModule('SubjectHierarchy')
-
     self.section_SetupPathsAndNames()
-    self.section_LoadInputData()
+    self.section_LoadDicomData()
     self.section_AddNodeToSubjectHierarchy()
     self.section_CreateSecondBranch()
     self.section_ReparentNodeInSubjectHierarchy()
@@ -158,6 +97,14 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
 
   # ------------------------------------------------------------------------------
   def section_SetupPathsAndNames(self):
+    # Make sure subject hierarchy auto-creation is on for this test
+    subjectHierarchyWidget = slicer.modules.subjecthierarchy.widgetRepresentation()
+    subjectHierarchyPluginLogic = subjectHierarchyWidget.pluginLogic()
+    self.assertTrue( subjectHierarchyWidget != None )
+    self.assertTrue( subjectHierarchyPluginLogic != None )
+    subjectHierarchyPluginLogic.autoCreateSubjectHierarchy = True
+
+    # Set constants
     subjectHierarchyGenericSelfTestDir = slicer.app.temporaryPath + '/SubjectHierarchyGenericSelfTest'
     print('Test directory: ' + subjectHierarchyGenericSelfTestDir)
     if not os.access(subjectHierarchyGenericSelfTestDir, os.F_OK):
@@ -177,6 +124,7 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.studyNodeName = '' # To be filled in after loading
     self.ctVolumeShNodeName = '' # To be filled in after loading
     self.sampleLabelmapName = 'SampleLabelmap'
+    self.sampleModelNoAutoCreateName = 'SampleModelNoAutoCreate'
     self.sampleModelName = 'SampleModel'
     self.patient2Name = 'Patient2'
     self.study2Name = 'Study2'
@@ -184,7 +132,7 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.testSubseriesName = 'TestSuberies_Empty'
 
   # ------------------------------------------------------------------------------
-  def section_LoadInputData(self):
+  def section_LoadDicomData(self):
     try:
       # Download and unzip test CT DICOM data
       import urllib
@@ -269,7 +217,7 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     # Create sample labelmap and model and add them in subject hierarchy
     sampleLabelmapNode = self.createSampleLabelmapVolumeNode(ctVolumeNode, self.sampleLabelmapName, 2)
     sampleModelColor = [0.0, 1.0, 0.0]
-    sampleModelNode = self.createSampleModelVolume(ctVolumeNode, self.sampleModelName, sampleModelColor)
+    sampleModelNode = self.createSampleModelVolume(self.sampleModelName, sampleModelColor, ctVolumeNode)
 
     # Get subject hierarchy scene model
     subjectHierarchyWidget = slicer.modules.subjecthierarchy.widgetRepresentation()
@@ -277,9 +225,13 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     subjectHierarchySceneModel = subjectHierarchyWidget.subjectHierarchySceneModel()
     self.assertTrue( subjectHierarchySceneModel != None )
 
-    # Get study node
+    # Get subject hierarchy nodes and study node
     ctVolumeShNode = vtkMRMLSubjectHierarchyNode.GetAssociatedSubjectHierarchyNode(ctVolumeNode)
     self.assertTrue( ctVolumeShNode != None )
+    sampleLabelmapShNode = vtkMRMLSubjectHierarchyNode.GetAssociatedSubjectHierarchyNode(sampleLabelmapNode)
+    self.assertTrue( sampleLabelmapShNode != None )
+    sampleModelShNode = vtkMRMLSubjectHierarchyNode.GetAssociatedSubjectHierarchyNode(sampleModelNode)
+    self.assertTrue( sampleModelShNode != None )
     studyNode = ctVolumeShNode.GetParentNode()
     self.assertTrue( studyNode != None )
 
@@ -287,23 +239,20 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.patientNodeName = studyNode.GetParentNode().GetName()
     self.studyNodeName = studyNode.GetName()
     self.ctVolumeShNodeName = ctVolumeShNode.GetName()
-    
+
     # Verify DICOM levels
-    self.assertTrue( studyNode.GetParentNode().GetLevel() == 'Subject' )
-    self.assertTrue( studyNode.GetLevel() == 'Study' )
-    self.assertTrue( ctVolumeShNode.GetLevel() == 'Series' )
+    self.assertTrue( studyNode.GetParentNode().GetLevel() == slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelPatient() )
+    self.assertTrue( studyNode.GetLevel() == slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelStudy() )
+    self.assertTrue( ctVolumeShNode.GetLevel() == slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelSeries() )
 
     # Add model and labelmap to the created study
-    subjectHierarchySceneModel.reparent(sampleLabelmapNode, studyNode)
-    subjectHierarchySceneModel.reparent(sampleModelNode, studyNode)
+    subjectHierarchySceneModel.reparent(sampleLabelmapShNode, studyNode)
+    subjectHierarchySceneModel.reparent(sampleModelShNode, studyNode)
+    qt.QApplication.processEvents()
 
-    sampleLabelmapShNode = vtkMRMLSubjectHierarchyNode.GetAssociatedSubjectHierarchyNode(sampleLabelmapNode)
-    self.assertTrue( sampleLabelmapShNode != None )
     self.assertTrue( sampleLabelmapShNode.GetParentNode() == studyNode )
     self.assertTrue( sampleLabelmapShNode.GetOwnerPluginName() == 'Volumes' )
 
-    sampleModelShNode = vtkMRMLSubjectHierarchyNode.GetAssociatedSubjectHierarchyNode(sampleModelNode)
-    self.assertTrue( sampleModelShNode != None )
     self.assertTrue( sampleModelShNode.GetParentNode() == studyNode )
     self.assertTrue( sampleModelShNode.GetOwnerPluginName() == 'Models' )
 
@@ -313,10 +262,10 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
 
     from vtkSlicerSubjectHierarchyModuleMRML import vtkMRMLSubjectHierarchyNode
 
-    patient2Node = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, None, 'Subject', self.patient2Name)
-    study2Node = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, patient2Node, 'Study', self.study2Name)
-    seriesNode = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, study2Node, 'Series', self.testSeriesName)
-    subseriesNode = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, seriesNode, 'Subseries', self.testSubseriesName)
+    patient2Node = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, None, slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelPatient(), self.patient2Name)
+    study2Node = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, patient2Node, slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelStudy(), self.study2Name)
+    seriesNode = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, study2Node, slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelSeries(), self.testSeriesName)
+    subseriesNode = vtkMRMLSubjectHierarchyNode.CreateSubjectHierarchyNode(slicer.mrmlScene, seriesNode, slicer.vtkMRMLSubjectHierarchyConstants.GetDICOMLevelSubseries(), self.testSubseriesName)
 
     # Check if the created nodes have the right parents
     self.assertTrue( study2Node.GetParentNode() == patient2Node )
@@ -328,9 +277,9 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.delayDisplay("Reparent node in subject hierarchy",self.delayMs)
 
     # Get second study node and labelmap node to reparent
-    study2Node = slicer.util.getNode(self.study2Name + '_SubjectHierarchy')
+    study2Node = slicer.util.getNode(self.study2Name + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( study2Node != None )
-    sampleLabelmapShNode = slicer.util.getNode(self.sampleLabelmapName + '_SubjectHierarchy')
+    sampleLabelmapShNode = slicer.util.getNode(self.sampleLabelmapName + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( sampleLabelmapShNode != None )
 
     # Get subject hierarchy scene model
@@ -387,27 +336,27 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.assertTrue( ctVolumeShNode != None )
     self.assertTrue( ctVolumeShNode.GetParentNode() == studyNode )
     
-    sampleModelShNode = slicer.util.getNode(self.sampleModelName + '_SubjectHierarchy')
+    sampleModelShNode = slicer.util.getNode(self.sampleModelName + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( sampleModelShNode != None )
     self.assertTrue( sampleModelShNode.GetParentNode() == studyNode )
     
-    patient2Node = slicer.util.getNode(self.patient2Name + '_SubjectHierarchy')
+    patient2Node = slicer.util.getNode(self.patient2Name + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( patient2Node != None )
     self.assertTrue( patient2Node.GetParentNode() == None )
 
-    study2Node = slicer.util.getNode(self.study2Name + '_SubjectHierarchy')
+    study2Node = slicer.util.getNode(self.study2Name + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( study2Node != None )
     self.assertTrue( study2Node.GetParentNode() == patient2Node )
 
-    sampleLabelmapShNode = slicer.util.getNode(self.sampleLabelmapName + '_SubjectHierarchy')
+    sampleLabelmapShNode = slicer.util.getNode(self.sampleLabelmapName + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( sampleLabelmapShNode != None )
     self.assertTrue( sampleLabelmapShNode.GetParentNode() == study2Node )
 
-    testSeriesNode = slicer.util.getNode(self.testSeriesName + '_SubjectHierarchy')
+    testSeriesNode = slicer.util.getNode(self.testSeriesName + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( testSeriesNode != None )
     self.assertTrue( testSeriesNode.GetParentNode() == study2Node )
 
-    testSubseriesNode = slicer.util.getNode(self.testSubseriesName + '_SubjectHierarchy')
+    testSubseriesNode = slicer.util.getNode(self.testSubseriesName + slicer.vtkMRMLSubjectHierarchyConstants.GetSubjectHierarchyNodeNamePostfix())
     self.assertTrue( testSubseriesNode != None )
     self.assertTrue( testSubseriesNode.GetParentNode() == testSeriesNode )
 
@@ -419,6 +368,8 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     self.assertTrue( label > 0 )
 
     sampleLabelmapNode = slicer.vtkMRMLScalarVolumeNode()
+    sampleLabelmapNode.SetName(name)
+    sampleLabelmapNode.SetLabelMap(1)
     sampleLabelmapNode = slicer.mrmlScene.AddNode(sampleLabelmapNode)
     sampleLabelmapNode.Copy(volumeNode)
     imageData = vtk.vtkImageData()
@@ -442,26 +393,24 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
       self.assertTrue( colorNode != None )
     labelmapVolumeDisplayNode.SetAndObserveColorNodeID(colorNode.GetID())
     labelmapVolumeDisplayNode.VisibilityOn()
-    sampleLabelmapNodeName = slicer.mrmlScene.GenerateUniqueName(name)
-    sampleLabelmapNode.SetName(sampleLabelmapNodeName)
-    sampleLabelmapNode.SetLabelMap(1)
     sampleLabelmapNode.SetAndObserveDisplayNodeID(labelmapVolumeDisplayNode.GetID())
-    sampleLabelmapNode.SetHideFromEditors(0)
 
     return sampleLabelmapNode
 
   #------------------------------------------------------------------------------
   # Create sphere model at the centre of an input volume
-  def createSampleModelVolume(self, volumeNode, name, color):
-    self.assertTrue( volumeNode != None )
-    self.assertTrue( volumeNode.IsA('vtkMRMLScalarVolumeNode') )
-
-    bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    volumeNode.GetRASBounds(bounds)
-    x = (bounds[0] + bounds[1])/2
-    y = (bounds[2] + bounds[3])/2
-    z = (bounds[4] + bounds[5])/2
-    radius = min(bounds[1]-bounds[0],bounds[3]-bounds[2],bounds[5]-bounds[4]) / 3.0
+  def createSampleModelVolume(self, name, color, volumeNode=None):
+    if volumeNode:
+      self.assertTrue( volumeNode.IsA('vtkMRMLScalarVolumeNode') )
+      bounds = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      volumeNode.GetRASBounds(bounds)
+      x = (bounds[0] + bounds[1])/2
+      y = (bounds[2] + bounds[3])/2
+      z = (bounds[4] + bounds[5])/2
+      radius = min(bounds[1]-bounds[0],bounds[3]-bounds[2],bounds[5]-bounds[4]) / 3.0
+    else:
+      radius = 50
+      x = y = z = 0
 
     # Taken from: http://www.na-mic.org/Bug/view.php?id=1536
     sphere = vtk.vtkSphereSource()
@@ -469,9 +418,8 @@ class SubjectHierarchyGenericSelfTestTest(unittest.TestCase):
     sphere.SetRadius(radius)
 
     modelNode = slicer.vtkMRMLModelNode()
+    modelNode.SetName(name)
     modelNode = slicer.mrmlScene.AddNode(modelNode)
-    modelNodeName = slicer.mrmlScene.GenerateUniqueName(name)
-    modelNode.SetName(modelNodeName)
     if vtk.VTK_MAJOR_VERSION <= 5:
       modelNode.SetAndObservePolyData(sphere.GetOutput())
     else:

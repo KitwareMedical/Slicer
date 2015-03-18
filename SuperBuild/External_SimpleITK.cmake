@@ -13,7 +13,7 @@ endif()
 
 # Sanity checks
 if(DEFINED SimpleITK_DIR AND NOT EXISTS ${SimpleITK_DIR})
-  message(FATAL_ERROR "SimpleITK_DIR variable is defined but corresponds to non-existing directory")
+  message(FATAL_ERROR "SimpleITK_DIR variable is defined but corresponds to nonexistent directory")
 endif()
 
 if(NOT ${CMAKE_PROJECT_NAME}_USE_SYSTEM_${proj})
@@ -34,7 +34,7 @@ ExternalProject_Execute(${proj} \"install\" \"${PYTHON_EXECUTABLE}\" PythonPacka
 ")
 
   set(SimpleITK_REPOSITORY ${git_protocol}://itk.org/SimpleITK.git)
-  set(SimpleITK_GIT_TAG f2241a13f6010cb6ea6da1b21c6f2d2e31641b16 ) # master branch 0.9.0.dev381
+  set(SimpleITK_GIT_TAG v0.9b01)
 
   ExternalProject_add(SimpleITK
     ${${proj}_EP_ARGS}
@@ -75,6 +75,20 @@ ExternalProject_Execute(${proj} \"install\" \"${PYTHON_EXECUTABLE}\" PythonPacka
     DEPENDS ${${proj}_DEPENDENCIES}
     )
   set(SimpleITK_DIR ${CMAKE_BINARY_DIR}/SimpleITK-build)
+
+  set(_lib_subdir lib)
+  if(WIN32)
+    set(_lib_subdir bin)
+  endif()
+
+  #-----------------------------------------------------------------------------
+  # Launcher setting specific to build tree
+
+  set(${proj}_LIBRARY_PATHS_LAUNCHER_BUILD ${SimpleITK_DIR}/${_lib_subdir}/<CMAKE_CFG_INTDIR>)
+  mark_as_superbuild(
+    VARS ${proj}_LIBRARY_PATHS_LAUNCHER_BUILD
+    LABELS "LIBRARY_PATHS_LAUNCHER_BUILD"
+    )
 
 else()
   ExternalProject_Add_Empty(${proj} DEPENDS ${${proj}_DEPENDENCIES})

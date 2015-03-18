@@ -23,16 +23,17 @@
 #include <vtkEventBroker.h>
 #include <vtkMRMLDisplayableNode.h>
 #include <vtkMRMLDisplayNode.h>
-#include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLModelHierarchyNode.h>
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLProceduralColorNode.h>
-#include "vtkMRMLClipModelsNode.h"
+#include <vtkMRMLClipModelsNode.h>
 #include <vtkMRMLScene.h>
-#include "vtkMRMLSliceNode.h"
-#include "vtkMRMLViewNode.h"
-#include "vtkMRMLInteractionNode.h"
+#include <vtkMRMLSliceNode.h>
+#include <vtkMRMLViewNode.h>
+#include <vtkMRMLInteractionNode.h>
+#include <vtkMRMLSelectionNode.h>
+#include <vtkMRMLTransformNode.h>
 
 // VTK includes
 #include <vtkAlgorithmOutput.h>
@@ -58,6 +59,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkVersion.h>
+#include <vtkWeakPointer.h>
 
 // for picking
 #include <vtkCellPicker.h>
@@ -121,6 +123,10 @@ public:
   double       PickedRAS[3];
   vtkIdType    PickedCellID;
   vtkIdType    PickedPointID;
+
+  // Used for caching the node pointer so that we do not have to search in the scene each time.
+  // We do not add an observer therefore we can let the selection node deleted without our knowledge.
+  vtkWeakPointer<vtkMRMLSelectionNode>   SelectionNode;
 };
 
 //---------------------------------------------------------------------------
@@ -149,7 +155,6 @@ vtkMRMLModelDisplayableManager::vtkInternal::vtkInternal()
 //---------------------------------------------------------------------------
 vtkMRMLModelDisplayableManager::vtkInternal::~vtkInternal()
 {
-
 }
 
 //---------------------------------------------------------------------------
@@ -183,7 +188,6 @@ void vtkMRMLModelDisplayableManager::vtkInternal::ResetPick()
   this->PickedPointID = -1;
 }
 
-
 //---------------------------------------------------------------------------
 // vtkMRMLModelDisplayableManager methods
 
@@ -202,7 +206,7 @@ vtkMRMLModelDisplayableManager::~vtkMRMLModelDisplayableManager()
   vtkSetMRMLNodeMacro(this->Internal->RedSliceNode, 0);
   vtkSetMRMLNodeMacro(this->Internal->GreenSliceNode, 0);
   vtkSetMRMLNodeMacro(this->Internal->YellowSliceNode, 0);
-
+  this->Internal->SelectionNode = 0; // WeakPointer, therefore must not use vtkSetMRMLNodeMacro
   // release the DisplayedModelActors
   this->Internal->DisplayedActors.clear();
 
@@ -306,7 +310,6 @@ int vtkMRMLModelDisplayableManager::UpdateClipSlicesFromMRML()
     }
 
   // update Slice nodes
-  vtkMRMLSliceNode *node= 0;
   vtkMRMLSliceNode *nodeRed= 0;
   vtkMRMLSliceNode *nodeGreen= 0;
   vtkMRMLSliceNode *nodeYellow= 0;
@@ -315,7 +318,7 @@ int vtkMRMLModelDisplayableManager::UpdateClipSlicesFromMRML()
   int nnodes = this->GetMRMLScene()->GetNodesByClass("vtkMRMLSliceNode", snodes);
   for (int n=0; n<nnodes; n++)
     {
-    node = vtkMRMLSliceNode::SafeDownCast (snodes[n]);
+      vtkMRMLSliceNode *node = vtkMRMLSliceNode::SafeDownCast (snodes[n]);
     // TODO use perhaps SliceLogic to get the name instead of "Red" etc.
     if (!strcmp(node->GetLayoutName(), "Red"))
       {
@@ -329,7 +332,6 @@ int vtkMRMLModelDisplayableManager::UpdateClipSlicesFromMRML()
       {
       nodeYellow = node;
       }
-    node = 0;
     }
 
   if (nodeRed != this->Internal->RedSliceNode)
@@ -868,7 +870,6 @@ void vtkMRMLModelDisplayableManager::UpdateModelsFromMRML()
 //---------------------------------------------------------------------------
 void vtkMRMLModelDisplayableManager::UpdateModifiedModel(vtkMRMLDisplayableNode *model)
 {
-
   this->UpdateModelHierarchyDisplay(model);
   this->UpdateModel(model);
   this->SetModelDisplayProperty(model);
@@ -905,7 +906,7 @@ void vtkMRMLModelDisplayableManager
   vtkMRMLTransformNode* tnode = displayableNode->GetParentTransformNode();
   vtkGeneralTransform *worldTransform = vtkGeneralTransform::New();
   worldTransform->Identity();
-  if (tnode != 0 && !tnode->IsLinear())
+  if (tnode != 0 && !tnode->IsTransformToWorldLinear())
     {
     hasNonLinearTransform = true;
     tnode->GetTransformToWorld(worldTransform);
@@ -945,10 +946,10 @@ void vtkMRMLModelDisplayableManager
       //visibility = hdnode->GetVisibility();
 #if (VTK_MAJOR_VERSION <= 5)
       polyData = hierarchyModelDisplayNode ?
-        hierarchyModelDisplayNode->GetPolyData() : NULL;
+        hierarchyModelDisplayNode->GetPolyData() : polyData;
 #else
       polyDataConnection = hierarchyModelDisplayNode ?
-        hierarchyModelDisplayNode->GetPolyDataConnection() : NULL;
+        hierarchyModelDisplayNode->GetPolyDataConnection() : polyDataConnection;
 #endif
       }
     // hierarchy display nodes may not have poly data pointer
@@ -1055,7 +1056,7 @@ void vtkMRMLModelDisplayableManager
         vtkMRMLTransformNode* tnode = displayableNode->GetParentTransformNode();
         // clipped model could be transformed
         // TODO: handle non-linear transforms
-        if (clipping == 0 || tnode == 0 || !tnode->IsLinear())
+        if (clipping == 0 || tnode == 0 || !tnode->IsTransformToWorldLinear())
           {
           continue;
           }
@@ -1511,10 +1512,9 @@ void vtkMRMLModelDisplayableManager::SetModelDisplayProperty(vtkMRMLDisplayableN
   vtkMRMLTransformNode* tnode = model->GetParentTransformNode();
 
   vtkNew<vtkMatrix4x4> matrixTransformToWorld;
-  if (tnode != 0 && tnode->IsLinear())
+  if (tnode != 0 && tnode->IsTransformToWorldLinear())
     {
-    vtkMRMLLinearTransformNode *lnode = vtkMRMLLinearTransformNode::SafeDownCast(tnode);
-    lnode->GetMatrixTransformToWorld(matrixTransformToWorld.GetPointer());
+    tnode->GetMatrixTransformToWorld(matrixTransformToWorld.GetPointer());
     }
 
   int ndnodes = model->GetNumberOfDisplayNodes();
@@ -1522,13 +1522,12 @@ void vtkMRMLModelDisplayableManager::SetModelDisplayProperty(vtkMRMLDisplayableN
 
   for (int i=0; i<ndnodes; i++)
     {
-    vtkMRMLDisplayNode *thisDisplayNode = model->GetNthDisplayNode(i);
-    vtkMRMLDisplayNode *mrmlDisplayNode = thisDisplayNode;
+    vtkMRMLDisplayNode *mrmlDisplayNode = model->GetNthDisplayNode(i);
     vtkMRMLModelDisplayNode *modelDisplayNode =
       vtkMRMLModelDisplayNode::SafeDownCast(mrmlDisplayNode);
-    if (thisDisplayNode != 0)
+    if (mrmlDisplayNode != 0)
       {
-      vtkProp3D *prop = this->GetActorByID(thisDisplayNode->GetID());
+      vtkProp3D *prop = this->GetActorByID(mrmlDisplayNode->GetID());
       if (prop == 0)
         {
         continue;
@@ -1536,7 +1535,17 @@ void vtkMRMLModelDisplayableManager::SetModelDisplayProperty(vtkMRMLDisplayableN
       // use hierarchy display node if it exists
       if (hierarchyDisplayNode)
         {
-        thisDisplayNode = hierarchyDisplayNode;
+        // process selection display node filter
+        if (this->GetSelectionNode())
+          {
+          std::string displayNode = this->GetSelectionNode()->GetModelHierarchyDisplayNodeClassName(
+                                    model->GetClassName());
+          if (!displayNode.empty() && !mrmlDisplayNode->IsA(displayNode.c_str()) )
+            {
+            continue;
+            }
+          }
+
         mrmlDisplayNode = hierarchyDisplayNode;
         modelDisplayNode = vtkMRMLModelDisplayNode::SafeDownCast(hierarchyDisplayNode);
         if (!modelDisplayNode)
@@ -1724,7 +1733,7 @@ void vtkMRMLModelDisplayableManager::SetModelDisplayProperty(vtkMRMLDisplayableN
               {
               // set the scalar range
               //actor->GetMapper()->SetScalarRange(modelDisplayNode->GetScalarRange());
-              //if (!(thisDisplayNode->IsA("vtkMRMLFiberBundleDisplayNode")))
+              //if (!(mrmlDisplayNode->IsA("vtkMRMLFiberBundleDisplayNode")))
               //  {
               // WHY need this, does not show glyph colors otherwise
               //actor->GetMapper()->SetScalarModeToUsePointFieldData();
@@ -1874,7 +1883,6 @@ const char* vtkMRMLModelDisplayableManager
        polyDataConnection->GetProducer()->Update();
        }
 #endif
-
       }
     activeScalarName =
       modelNode->GetActiveCellScalarName(vtkDataSetAttributes::SCALARS);
@@ -1961,7 +1969,6 @@ const char * vtkMRMLModelDisplayableManager::GetIDByActor(vtkProp3D *actor)
     }
   return (0);
 }
-
 
 //---------------------------------------------------------------------------
 vtkWorldPointPicker* vtkMRMLModelDisplayableManager::GetWorldPointPicker()
@@ -2214,10 +2221,9 @@ vtkClipPolyData* vtkMRMLModelDisplayableManager::CreateTransformedClipper(
   vtkMRMLTransformNode* tnode = model->GetParentTransformNode();
   vtkNew<vtkMatrix4x4> transformToWorld;
   transformToWorld->Identity();
-  if (tnode != 0 && tnode->IsLinear())
+  if (tnode != 0 && tnode->IsTransformToWorldLinear())
     {
-    vtkMRMLLinearTransformNode *lnode = vtkMRMLLinearTransformNode::SafeDownCast(tnode);
-    lnode->GetMatrixTransformToWorld(transformToWorld.GetPointer());
+    tnode->GetMatrixTransformToWorld(transformToWorld.GetPointer());
 
     vtkNew<vtkImplicitBoolean> slicePlanes;
 
@@ -2281,7 +2287,6 @@ vtkClipPolyData* vtkMRMLModelDisplayableManager::CreateTransformedClipper(
   return clipper;
 }
 
-
 //---------------------------------------------------------------------------
 void vtkMRMLModelDisplayableManager::OnInteractorStyleEvent(int eventid)
 {
@@ -2295,7 +2300,6 @@ void vtkMRMLModelDisplayableManager::OnInteractorStyleEvent(int eventid)
   //if (eventid == vtkCommand::LeftButtonReleaseEvent)
   if (eventid == vtkCommand::LeftButtonPressEvent && keyPressed)
     {
-
     double x = this->GetInteractor()->GetEventPosition()[0];
     double y = this->GetInteractor()->GetEventPosition()[1];
 
@@ -2342,3 +2346,21 @@ void vtkMRMLModelDisplayableManager::OnInteractorStyleEvent(int eventid)
   return;
 }
 
+vtkMRMLSelectionNode* vtkMRMLModelDisplayableManager::GetSelectionNode()
+{
+  // If selection node is set then use that, otherwise find selection node in the scene
+  if (this->Internal->SelectionNode == 0)
+    {
+    std::vector<vtkMRMLNode *> selectionNodes;
+    if (this->GetMRMLScene())
+      {
+      this->GetMRMLScene()->GetNodesByClass("vtkMRMLSelectionNode", selectionNodes);
+      }
+
+    if (selectionNodes.size() > 0)
+      {
+      this->Internal->SelectionNode = vtkMRMLSelectionNode::SafeDownCast(selectionNodes[0]);
+      }
+    }
+  return this->Internal->SelectionNode;
+}

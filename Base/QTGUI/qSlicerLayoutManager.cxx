@@ -55,8 +55,6 @@ class qSlicerLayoutManagerPrivate: public qMRMLLayoutManagerPrivate
 {
 public:
   qSlicerLayoutManagerPrivate(qSlicerLayoutManager& object);
-  /// Instantiate a slice viewer corresponding to \a sliceViewName
-  virtual QWidget* createSliceWidget(vtkMRMLSliceNode* sliceNode);
 
 public:
   QString            ScriptedDisplayableManagerDirectory;
@@ -66,12 +64,6 @@ public:
 qSlicerLayoutManagerPrivate::qSlicerLayoutManagerPrivate(qSlicerLayoutManager& object)
   : qMRMLLayoutManagerPrivate(object)
 {
-}
-
-// --------------------------------------------------------------------------
-QWidget* qSlicerLayoutManagerPrivate::createSliceWidget(vtkMRMLSliceNode* sliceNode)
-{
-  return this->qMRMLLayoutManagerPrivate::createSliceWidget(sliceNode);
 }
 
 //------------------------------------------------------------------------------

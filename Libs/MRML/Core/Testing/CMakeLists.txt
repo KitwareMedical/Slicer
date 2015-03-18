@@ -97,11 +97,14 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   vtkObserverManagerTest1.cxx
   vtkOrientedBSplineTransformTest1.cxx
   vtkOrientedGridTransformTest1.cxx
+  vtkThinPlateSplineTransformTest1.cxx
   EXTRA_INCLUDE vtkMRMLDebugLeaksMacro.h
   )
 
 add_executable(${KIT}CxxTests ${Tests} vtkMRMLSceneEventRecorder.cxx)
 target_link_libraries(${KIT}CxxTests ${KIT})
+
+set_target_properties(${KIT}CxxTests PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
 
 #-----------------------------------------------------------------------------
 set(TEMP "${CMAKE_BINARY_DIR}/Testing/Temporary")
@@ -199,6 +202,7 @@ simple_test( vtkMRMLVolumeHeaderlessStorageNodeTest1 )
 simple_test( vtkMRMLVolumeNodeTest1 )
 simple_test( vtkObserverManagerTest1 )
 simple_test( vtkOrientedBSplineTransformTest1 )
+simple_test( vtkThinPlateSplineTransformTest1 )
 
 macro(SIMPLE_TEST_WITH_SCENE TESTNAME SCENEFILENAME)
   add_test(

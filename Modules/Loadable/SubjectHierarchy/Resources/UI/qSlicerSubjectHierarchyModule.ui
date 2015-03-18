@@ -13,6 +13,10 @@
   <property name="windowTitle">
    <string>SubjectHierarchy</string>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../qSlicerSubjectHierarchyModule.qrc">
+    <normaloff>:/Icons/SubjectHierarchy.png</normaloff>:/Icons/SubjectHierarchy.png</iconset>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
     <number>4</number>
@@ -22,14 +26,8 @@
    </property>
    <item>
     <widget class="qMRMLSubjectHierarchyTreeView" name="SubjectHierarchyTreeView">
-     <property name="acceptDrops">
-      <bool>true</bool>
-     </property>
-     <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
-     </property>
      <property name="dragDropMode">
-      <enum>QAbstractItemView::DragDrop</enum>
+      <enum>QAbstractItemView::InternalMove</enum>
      </property>
      <property name="indentation">
       <number>12</number>
@@ -41,10 +39,7 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <property name="horizontalSpacing">
-      <number>4</number>
-     </property>
-     <property name="verticalSpacing">
+     <property name="spacing">
       <number>0</number>
      </property>
      <item row="1" column="0" colspan="2">
@@ -68,13 +63,6 @@
        </layout>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QCheckBox" name="DisplayMRMLIDsCheckBox">
-       <property name="text">
-        <string>MRML ID's</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="spacing">
@@ -91,12 +79,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QCheckBox" name="PotentialNodesCheckBox">
+        <widget class="QCheckBox" name="DisplayMRMLIDsCheckBox">
          <property name="text">
-          <string>Potential nodes</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
+          <string>ID's</string>
          </property>
         </widget>
        </item>
@@ -168,14 +153,6 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
-  <include location="../qSlicerSubjectHierarchyModule.qrc"/>
   <include location="../qSlicerSubjectHierarchyModule.qrc"/>
  </resources>
  <connections>

@@ -50,6 +50,10 @@ public:
   static const std::string SUBJECTHIERARCHY_UID_NAME_VALUE_SEPARATOR;
 
 public:
+  /// IMPORTANT! New method should not be used to create subject hierarchy nodes.
+  ///   The nodes are created automatically for supported data types when adding
+  ///   the data nodes. To set up the node (name, level, parent, associated data)
+  ///   call \sa CreateSubjectHierarchyNode method.
   static vtkMRMLSubjectHierarchyNode *New();
   vtkTypeMacro(vtkMRMLSubjectHierarchyNode,vtkMRMLHierarchyNode);
   void PrintSelf(ostream& os, vtkIndent indent);
@@ -69,8 +73,14 @@ public:
   virtual const char* GetNodeTagName();
 
 public:
-  /// Find subject hierarchy node according to a UID
+  /// Find subject hierarchy node according to a UID (by exact match)
+  /// \param uidValue UID string that needs to _exactly match_ the UID string of the subject hierarchy node
   static vtkMRMLSubjectHierarchyNode* GetSubjectHierarchyNodeByUID(vtkMRMLScene* scene, const char* uidName, const char* uidValue);
+
+  /// Find subject hierarchy node according to a UID (by containing). For example find UID in instance UID list
+  /// \param uidValue UID string that needs to be _contained_ in the UID string of the subject hierarchy node
+  /// \return First match
+  static vtkMRMLSubjectHierarchyNode* GetSubjectHierarchyNodeByUIDList(vtkMRMLScene* scene, const char* uidName, const char* uidValue);
 
   /// Get associated subject hierarchy node for a MRML node
   /// Note: This must be used instead of vtkMRMLHierarchyNode::GetAssociatedHierarchyNode, because nested associations have been introduced to avoid conflicts.
@@ -89,7 +99,9 @@ public:
   /// \return Child node whose name without postfix is the same as the given attribute
   static vtkMRMLSubjectHierarchyNode* GetChildWithName(vtkMRMLSubjectHierarchyNode* parent, const char* name, vtkMRMLScene* scene=NULL);
 
-  /// Create subject hierarchy node in the scene under a specified parent
+  /// Create subject hierarchy node in the scene under a specified parent. If the node existed (most of the cases,
+  /// as subject hierarchy nodes are automatically added for supported data types when adding the data nodes),
+  /// then use that and set it up with the supplied parameters.
   /// \param scene MRML scene
   /// \param parent Parent node under which the created node is put. If NULL, then the child will be a top-level node
   /// \param level Level string of the created node
@@ -129,7 +141,9 @@ public:
 
   /// Get attribute value for a node from an upper level in the subject hierarchy
   /// \param attributeName Name of the requested attribute
-  /// \param level Level of the ancestor node we look for the attribute in (e.g. SubjectHierarchy_LEVEL_STUDY). If NULL, then look all the way up to the subject
+  /// \param level Level of the ancestor node we look for the attribute in
+  ///   (e.g. value of vtkMRMLSubjectHierarchyConstants::GetSubjectHierarchyLevelStudy()).
+  ///   If NULL, then look all the way up to the subject
   /// \return Attribute value from the lowest level ancestor where the attribute can be found
   const char* GetAttributeFromAncestor(const char* attributeName, const char* level=NULL);
 
@@ -153,6 +167,12 @@ public:
 
   /// Harden transform on itself and on all children, recursively
   void HardenTransformOnBranch();
+
+  /// Get subject hierarchy nodes that are referenced from this node by DICOM.
+  /// Finds the series nodes that contain the SOP instance UIDs that are listed in
+  /// the MRML attribute of this node containing the referenced SOP instance UIDs
+  /// \sa vtkMRMLSubjectHierarchyConstants::GetDICOMReferencedInstanceUIDsAttributeName()
+  std::vector<vtkMRMLSubjectHierarchyNode*> GetSubjectHierarchyNodesReferencedByDICOM();
 
 public:
   /// Set level

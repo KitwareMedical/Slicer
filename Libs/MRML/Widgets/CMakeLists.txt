@@ -106,6 +106,8 @@ set(MRMLWidgets_SRCS
   qMRMLLayoutManager.cxx
   qMRMLLayoutManager.h
   qMRMLLayoutManager_p.h
+  qMRMLLayoutViewFactory.cxx
+  qMRMLLayoutViewFactory.h
   qMRMLLayoutWidget.cxx
   qMRMLLayoutWidget.h
   qMRMLLinearTransformSlider.cxx
@@ -238,6 +240,7 @@ set(MRMLWidgets_MOC_SRCS
   qMRMLLabelComboBox.h
   qMRMLLayoutManager.h
   qMRMLLayoutManager_p.h
+  qMRMLLayoutViewFactory.h
   qMRMLLayoutWidget.h
   qMRMLLinearTransformSlider.h
   qMRMLListWidget.h
@@ -419,6 +422,15 @@ if(Slicer_LIBRARY_PROPERTIES)
   set_target_properties(${lib_name} PROPERTIES ${Slicer_LIBRARY_PROPERTIES})
 endif()
 
+# --------------------------------------------------------------------------
+# Folder
+# --------------------------------------------------------------------------
+if(NOT DEFINED ${PROJECT_NAME}_FOLDER)
+  set(${PROJECT_NAME}_FOLDER ${PROJECT_NAME})
+endif()
+if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
+  set_target_properties(${lib_name} PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
+endif()
 
 # --------------------------------------------------------------------------
 # PythonQt wrapping
@@ -431,6 +443,10 @@ if(MRMLWidgets_WRAP_PYTHON)
     INSTALL_BIN_DIR ${Slicer_INSTALL_BIN_DIR}
     INSTALL_LIB_DIR ${Slicer_INSTALL_LIB_DIR}
     )
+  # Folder
+  if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
+    set_target_properties(${lib_name}PythonQt PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
+  endif()
 endif()
 
 # --------------------------------------------------------------------------

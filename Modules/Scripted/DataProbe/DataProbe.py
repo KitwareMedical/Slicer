@@ -1,7 +1,8 @@
 import os
 import unittest
-import qt, vtk
+import qt, vtk, ctk
 from __main__ import slicer
+import DataProbeLib
 
 #
 # DataProbe
@@ -17,12 +18,13 @@ class DataProbe:
 The DataProbe module is used to get information about the current RAS position being indicated by the mouse position.  See <a href=\"$a/Documentation/$b.$c/Modules/DataProbe\">$a/Documentation/$b.$c/Modules/DataProbe</a> for more information.
     """).substitute({ 'a':parent.slicerWikiUrl, 'b':slicer.app.majorVersion, 'c':slicer.app.minorVersion })
     parent.acknowledgementText = """
-This work is supported by NA-MIC, NAC, NCIGT, and the Slicer Community. See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper.
+This work is supported by NA-MIC, NAC, NCIGT, NIH U24 CA180918 (PIs Kikinis and Fedorov) and the Slicer Community.
+See <a>http://www.slicer.org</a> for details.  Module implemented by Steve Pieper.
     """
     # TODO: need a DataProbe icon
     #parent.icon = qt.QIcon(':Icons/XLarge/SlicerDownloadMRHead.png')
     self.parent = parent
-    self.infoWidget = 0
+    self.infoWidget = None
 
     if slicer.mrmlScene.GetTagByClassName( "vtkMRMLScriptedModuleNode" ) != 'ScriptedModule':
       slicer.mrmlScene.RegisterNodeClass(vtkMRMLScriptedModuleNode())
@@ -80,6 +82,10 @@ class DataProbeInfoWidget(object):
 
     self.frame = qt.QFrame(parent)
     self.frame.setLayout(qt.QVBoxLayout())
+
+    modulePath = slicer.modules.dataprobe.path.replace("DataProbe.py","")
+    self.iconsDIR = modulePath + '/Resources/Icons'
+
     if type == 'small':
       self.createSmall()
 
@@ -261,6 +267,18 @@ class DataProbeInfoWidget(object):
   def createSmall(self):
     """Make the internals of the widget to display in the
     Data Probe frame (lower left of slicer main window by default)"""
+
+    # this method makes SliceView Annotation
+    self.sliceAnnotations = DataProbeLib.SliceAnnotations()
+
+    # goto module button
+    self.goToModule = qt.QPushButton('->', self.frame)
+    self.goToModule.setToolTip('Go to the DataProbe module for more information and options')
+    self.frame.layout().addWidget(self.goToModule)
+    self.goToModule.connect("clicked()", self.onGoToModule)
+    # hide this for now - there's not much to see in the module itself
+    self.goToModule.hide()
+
     # top row - things about the viewer itself
     self.viewerFrame = qt.QFrame(self.frame)
     self.viewerFrame.setLayout(qt.QHBoxLayout())
@@ -329,7 +347,6 @@ class DataProbeWidget:
 
   def __init__(self, parent=None):
     self.observerTags = []
-
     if not parent:
       self.parent = slicer.qMRMLWidget()
       self.parent.setLayout(qt.QVBoxLayout())
@@ -358,7 +375,7 @@ class DataProbeWidget:
     self.reloadButton = qt.QPushButton("Reload")
     self.reloadButton.toolTip = "Reload this module."
     self.reloadButton.name = "DataProbe Reload"
-    self.layout.addWidget(self.reloadButton)
+    #self.layout.addWidget(self.reloadButton)
     self.reloadButton.connect('clicked()', self.onReload)
 
     # reload and test button
@@ -366,8 +383,17 @@ class DataProbeWidget:
     #  your module to users)
     self.reloadAndTestButton = qt.QPushButton("Reload and Test")
     self.reloadAndTestButton.toolTip = "Reload this module and then run the self tests."
-    self.layout.addWidget(self.reloadAndTestButton)
+    #self.layout.addWidget(self.reloadAndTestButton)
     self.reloadAndTestButton.connect('clicked()', self.onReloadAndTest)
+
+    settingsCollapsibleButton = ctk.ctkCollapsibleButton()
+    settingsCollapsibleButton.text = "Slice View Annotations Settings"
+    self.layout.addWidget(settingsCollapsibleButton)
+    settingsVBoxLayout = qt.QVBoxLayout(settingsCollapsibleButton)
+    dataProbeInstance = slicer.modules.DataProbeInstance
+    if dataProbeInstance.infoWidget:
+      sliceAnnotationsFrame = dataProbeInstance.infoWidget.sliceAnnotations.window
+      settingsVBoxLayout.addWidget(sliceAnnotationsFrame)
 
     self.parent.layout().addStretch(1)
 

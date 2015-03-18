@@ -20,7 +20,7 @@
 ################################################################################
 
 #-----------------------------------------------------------------------------
-# Git protocole option
+# Git protocol option
 #-----------------------------------------------------------------------------
 option(${CMAKE_PROJECT_NAME}_USE_GIT_PROTOCOL "If behind a firewall turn this off to use http instead." ON)
 set(git_protocol "git")
@@ -121,8 +121,11 @@ if(Slicer_USE_PYTHONQT AND Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
     # python-PyGithub requires SSL support in Python
     list(APPEND Slicer_DEPENDENCIES python-PyGithub)
   else()
-    message(WARNING "Python was built without SSL support; "
-                    "github integration will not be available")
+    message(STATUS "--------------------------------------------------")
+    message(STATUS "Python was built without SSL support; "
+                   "github integration will not be available. "
+                   "Set Slicer_USE_PYTHONQT_WITH_OPENSSL=ON to enable this feature.")
+    message(STATUS "--------------------------------------------------")
   endif()
 endif()
 
@@ -170,7 +173,7 @@ list(APPEND Slicer_REMOTE_DEPENDENCIES jqPlot)
 
 Slicer_Remote_Add(OpenIGTLinkIF
   GIT_REPOSITORY ${git_protocol}://github.com/openigtlink/OpenIGTLinkIF.git
-  GIT_TAG fb1a29ac43c01f0a96a11525bc522360d82321d4
+  GIT_TAG 19af4e2fb519164c5ee4d72e0e8f58cfc2dba7b2
   OPTION_NAME Slicer_BUILD_OpenIGTLinkIF
   OPTION_DEPENDS "Slicer_BUILD_QTLOADABLEMODULES;Slicer_USE_OpenIGTLink"
   LABELS REMOTE_MODULE
@@ -182,7 +185,7 @@ mark_as_advanced(Slicer_BUILD_MULTIVOLUME_SUPPORT)
 
 Slicer_Remote_Add(MultiVolumeExplorer
   GIT_REPOSITORY ${git_protocol}://github.com/fedorov/MultiVolumeExplorer.git
-  GIT_TAG 9135996ae232ce4804a7255518d1bcb66987e8c6
+  GIT_TAG dbdab6e4ae9b54c93fb611bc6085db729b26c71c
   OPTION_NAME Slicer_BUILD_MultiVolumeExplorer
   OPTION_DEPENDS "Slicer_BUILD_QTLOADABLEMODULES;Slicer_BUILD_MULTIVOLUME_SUPPORT;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -191,7 +194,7 @@ list_conditional_append(Slicer_BUILD_MultiVolumeExplorer Slicer_REMOTE_DEPENDENC
 
 Slicer_Remote_Add(MultiVolumeImporter
   GIT_REPOSITORY ${git_protocol}://github.com/fedorov/MultiVolumeImporter.git
-  GIT_TAG fb38cbbd000926c1849fa4e3c81abb6d3065f4a4
+  GIT_TAG 37a30b3dd2b632340b7d77fcd7af76765df959b0
   OPTION_NAME Slicer_BUILD_MultiVolumeImporter
   OPTION_DEPENDS "Slicer_BUILD_QTLOADABLEMODULES;Slicer_BUILD_MULTIVOLUME_SUPPORT;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -200,7 +203,7 @@ list_conditional_append(Slicer_BUILD_MultiVolumeImporter Slicer_REMOTE_DEPENDENC
 
 Slicer_Remote_Add(SimpleFilters
   GIT_REPOSITORY ${git_protocol}://github.com/SimpleITK/SlicerSimpleFilters.git
-  GIT_TAG b27cdf629257b1919a4e7d61daba86fa137f9f4d
+  GIT_TAG 625d9414d4d5e69cae9d29424693f170d81d5f4f
   OPTION_NAME Slicer_BUILD_SimpleFilters
   OPTION_DEPENDS "Slicer_BUILD_QTSCRIPTEDMODULES;Slicer_USE_SimpleITK"
   LABELS REMOTE_MODULE
@@ -248,7 +251,7 @@ set(BRAINSTools_options
   )
 Slicer_Remote_Add(BRAINSTools
   GIT_REPOSITORY "${git_protocol}://github.com/Slicer/BRAINSTools.git"
-  GIT_TAG "dd996be3a187b095df0083756ce2d85657408068" # Version 57c31ab including few commits backported from BRAINS master
+  GIT_TAG "73a6e2d6c2488823ba7d312471982a1897099c98"
   OPTION_NAME Slicer_BUILD_BRAINSTOOLS
   OPTION_DEPENDS "Slicer_BUILD_CLI_SUPPORT;Slicer_BUILD_CLI"
   LABELS REMOTE_MODULE
@@ -258,12 +261,21 @@ list_conditional_append(Slicer_BUILD_BRAINSTOOLS Slicer_REMOTE_DEPENDENCIES BRAI
 
 Slicer_Remote_Add(EMSegment
   SVN_REPOSITORY "http://svn.slicer.org/Slicer3/branches/Slicer4-EMSegment"
-  SVN_REVISION -r "17076"
+  SVN_REVISION -r "17093"
   OPTION_NAME Slicer_BUILD_EMSegment
   OPTION_DEPENDS "Slicer_BUILD_BRAINSTOOLS;Slicer_BUILD_QTLOADABLEMODULES;Slicer_USE_PYTHONQT_WITH_TCL"
   LABELS REMOTE_MODULE
   )
 list_conditional_append(Slicer_BUILD_EMSegment Slicer_REMOTE_DEPENDENCIES EMSegment)
+
+Slicer_Remote_Add(OtsuThresholdImageFilter
+  GIT_REPOSITORY "${git_protocol}://github.com/Slicer/Slicer-OtsuThresholdImageFilter"
+  GIT_TAG "5efe4123584016d73147e0b68a9487e64c10a074"
+  OPTION_NAME Slicer_BUILD_OtsuThresholdImageFilter
+  OPTION_DEPENDS "Slicer_BUILD_EMSegment"
+  LABELS REMOTE_MODULE
+  )
+list_conditional_append(Slicer_BUILD_OtsuThresholdImageFilter Slicer_REMOTE_DEPENDENCIES OtsuThresholdImageFilter)
 
 Slicer_Remote_Add(DataStore
   GIT_REPOSITORY "${git_protocol}://github.com/Slicer/Slicer-DataStore"
@@ -275,7 +287,7 @@ list_conditional_append(Slicer_BUILD_DataStore Slicer_REMOTE_DEPENDENCIES DataSt
 
 Slicer_Remote_Add(CompareVolumes
   GIT_REPOSITORY "${git_protocol}://github.com/pieper/CompareVolumes"
-  GIT_TAG "db50d7d81ab1b98586161849dd82df5715a411a0"
+  GIT_TAG "61198229a065bf8437166c826baee2ddcc0d7f47"
   OPTION_NAME Slicer_BUILD_CompareVolumes
   OPTION_DEPENDS "Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -284,7 +296,7 @@ list_conditional_append(Slicer_BUILD_CompareVolumes Slicer_REMOTE_DEPENDENCIES C
 
 Slicer_Remote_Add(LandmarkRegistration
   GIT_REPOSITORY "${git_protocol}://github.com/pieper/LandmarkRegistration"
-  GIT_TAG "d56d91aad9813c48e67e07afabde72cec4660146"
+  GIT_TAG "fbf515ecd91b26177bad25e0336c24deec8bf69b"
   OPTION_NAME Slicer_BUILD_LandmarkRegistration
   OPTION_DEPENDS "Slicer_BUILD_CompareVolumes;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -339,7 +351,6 @@ ExternalProject_Add(${proj}
     -DSlicer_REQUIRED_CXX_FLAGS:STRING=${Slicer_REQUIRED_CXX_FLAGS}
     -DSlicer_SUPERBUILD:BOOL=OFF
     -DSlicer_SUPERBUILD_DIR:PATH=${Slicer_BINARY_DIR}
-    -DSlicer_BUILD_WIN32_CONSOLE:BOOL=${Slicer_BUILD_WIN32_CONSOLE}
     -D${Slicer_MAIN_PROJECT}_APPLICATION_NAME:STRING=${${Slicer_MAIN_PROJECT}_APPLICATION_NAME}
     -D${Slicer_MAIN_PROJECT_APPLICATION_NAME}_VERSION_MAJOR:STRING=${${Slicer_MAIN_PROJECT_APPLICATION_NAME}_VERSION_MAJOR}
     -D${Slicer_MAIN_PROJECT_APPLICATION_NAME}_VERSION_MINOR:STRING=${${Slicer_MAIN_PROJECT_APPLICATION_NAME}_VERSION_MINOR}

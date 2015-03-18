@@ -100,7 +100,7 @@ public:
     vtkSeedWidget *widget = vtkSeedWidget::SafeDownCast(this->Widget);
     if (widget && this->DisplayableManager && this->Node)
       {
-      vtkMRMLSliceNode *sliceNode = this->DisplayableManager->GetSliceNode();
+      vtkMRMLSliceNode *sliceNode = this->DisplayableManager->GetMRMLSliceNode();
       if (sliceNode)
         {
         int modifiedWasDisabled = this->Node->GetDisableModifiedEvent();
@@ -148,7 +148,7 @@ public:
       vtkSeedRepresentation * representation = vtkSeedRepresentation::SafeDownCast(this->Widget->GetRepresentation());
       if (!representation)
         {
-        std::cerr << "Representation is null.\n";
+        vtkErrorWithObjectMacro(this->Widget, "Representation is null.");
         return;
         }
 
@@ -254,6 +254,9 @@ vtkAbstractWidget * vtkMRMLMarkupsFiducialDisplayableManager2D::CreateWidget(vtk
     }
 
   vtkNew<vtkSeedRepresentation> rep;
+
+  vtkDebugMacro("making handle for fiducialNode " << fiducialNode->GetName());
+  vtkDebugMacro(" for sliceNode " << this->GetMRMLSliceNode()->GetName());
 
   if (!this->IsInLightboxMode())
     {
@@ -438,7 +441,7 @@ bool vtkMRMLMarkupsFiducialDisplayableManager2D::UpdateNthSeedPositionFromMRML(i
     {
     // only update when really changed
     vtkDebugMacro("UpdateNthSeedPositionFromMRML: " << n << ": "
-                  << this->GetSliceNode()->GetName()
+                  << this->GetMRMLSliceNode()->GetName()
                   << ": display coordinates changed:\n\tseed display = "
                   << displayCoordinatesBuffer1[0] << ", " << displayCoordinatesBuffer1[1]
                   << "\n\tfid display =  " << displayCoordinates1[0] << ", " << displayCoordinates1[1] );
@@ -457,7 +460,7 @@ bool vtkMRMLMarkupsFiducialDisplayableManager2D::UpdateNthSeedPositionFromMRML(i
     }
   else
     {
-    vtkDebugMacro("UpdateNthSeedPositionFromMRML: " <<  this->GetSliceNode()->GetName() << ": display coordinates unchanged!");
+    vtkDebugMacro("UpdateNthSeedPositionFromMRML: " <<  this->GetMRMLSliceNode()->GetName() << ": display coordinates unchanged!");
     }
   return positionChanged;
 }
@@ -670,6 +673,9 @@ void vtkMRMLMarkupsFiducialDisplayableManager2D::SetNthSeed(int n, vtkMRMLMarkup
       {
       handleRep->VisibilityOn();
       handleRep->HandleVisibilityOn();
+#if (VTK_MAJOR_VERSION >= 6)
+      handleRep->EnablePicking();
+#endif
       if (textString.compare("") != 0)
         {
         handleRep->LabelVisibilityOn();
@@ -687,7 +693,16 @@ void vtkMRMLMarkupsFiducialDisplayableManager2D::SetNthSeed(int n, vtkMRMLMarkup
       handleRep->VisibilityOff();
       handleRep->HandleVisibilityOff();
       handleRep->LabelVisibilityOff();
+#if (VTK_MAJOR_VERSION >= 6)
+      handleRep->DisablePicking();
+      vtkSeedRepresentation *seedRepresentation = vtkSeedRepresentation::SafeDownCast(seedWidget->GetRepresentation());
+      if (seedRepresentation)
+        {
+        seedRepresentation->GetHandleRepresentation()->DisablePicking();
+        }
+#else
       seedWidget->GetSeed(n)->EnabledOff();
+#endif
 
       // if the widget is not shown on the slice, show the intersection
       if (fiducialNode &&
@@ -819,6 +834,9 @@ void vtkMRMLMarkupsFiducialDisplayableManager2D::SetNthSeed(int n, vtkMRMLMarkup
                 glyphSource->SetColor(projectionColor);
                 handleRep->GetProperty()->SetColor(projectionColor);
                 handleRep->GetProperty()->SetOpacity(projectionOpacity);
+                // call update to update the points array and avoid a
+                // null pointer crash
+                glyphSource->Update();
                 handleRep->SetCursorShape(glyphSource->GetOutput());
                 handleRep->SetDisplayPosition(displayP1);
                 projectionSeed->On();
@@ -992,11 +1010,40 @@ void vtkMRMLMarkupsFiducialDisplayableManager2D::PropagateMRMLToWidget(vtkMRMLMa
 
   vtkDebugMacro("Fids PropagateMRMLToWidget, node num markups = " << numberOfFiducials);
 
+#if (VTK_MAJOR_VERSION >= 6)
+  if (numberOfFiducials == 0)
+    {
+    if (handleRep)
+      {
+      handleRep->DisablePicking();
+      }
+    int seed = 0;
+    vtkHandleWidget *handleWidget;
+    while ( (handleWidget = seedWidget->GetSeed(seed)) )
+      {
+      vtkHandleRepresentation *handleRepresentation = handleWidget->GetHandleRepresentation();
+      if (handleRepresentation)
+        {
+        handleRepresentation->DisablePicking();
+        }
+      seed++;
+      }
+    }
+  else
+    {
+    if (handleRep)
+      {
+      handleRep->EnablePicking();
+      }
+    }
+#endif
+
   for (int n = 0; n < numberOfFiducials; n++)
     {
     // std::cout << "Fids PropagateMRMLToWidget: n = " << n << std::endl;
     this->SetNthSeed(n, fiducialNode, seedWidget);
     }
+
 
   // now update the position of all the seeds - done in SetNthSeed now
   //this->UpdatePosition(widget, node);
@@ -1363,6 +1410,9 @@ void vtkMRMLMarkupsFiducialDisplayableManager2D::UpdatePosition(vtkAbstractWidge
 //---------------------------------------------------------------------------
 void vtkMRMLMarkupsFiducialDisplayableManager2D::OnMRMLSceneEndClose()
 {
+  // make sure to delete widgets and projections
+  this->Superclass::OnMRMLSceneEndClose();
+
   // clear out the map of glyph types
   this->Helper->ClearNodeGlyphTypes();
 }

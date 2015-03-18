@@ -58,6 +58,7 @@ if(Slicer_BUILD_DIFFUSION_SUPPORT)
     DTIImportExport
     TractographyLabelMapSeeding
     FiberBundleLabelSelect
+    FiberTractMeasurements
     )
 endif()
 
@@ -93,11 +94,6 @@ if(BUILD_TESTING)
     DOC "Directory with data taken from http://public.kitware.com/pub/itk/Data/BrainWeb/")
   mark_as_advanced(SLICER_BRAINWEB_DATA_ROOT)
 
-  set(SEM_LAUNCH_COMMAND ${Slicer_LAUNCH_COMMAND})
-  if(USE_VALGRIND)
-    set(SEM_LAUNCH_COMMAND "${Slicer_BINARY_DIR}/Scripts/runValgrindForOneModule.sh")
-  endif()
-
   set(BASELINE "${Slicer_SOURCE_DIR}/Testing/Data/Baseline/CLI")
   set(TEST_DATA "${Slicer_SOURCE_DIR}/Testing/Data/Input")
   set(MRML_TEST_DATA "${Slicer_SOURCE_DIR}/Libs/MRML/Core/Testing/TestData")
@@ -108,8 +104,8 @@ endif()
 
 foreach(module ${cli_modules})
   list(FIND Slicer_CLIMODULES_DISABLED ${module} _module_disabled)
+  set(${module}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${module})
   if(${_module_disabled} STREQUAL "-1")
-    set(${module}_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${module})
     add_subdirectory(${module})
   endif()
 endforeach(module)

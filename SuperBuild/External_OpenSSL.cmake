@@ -26,26 +26,44 @@ endif()
 
 
 if(UNIX)
-  set(_no_openssl_libraries
-    NOT DEFINED OPENSSL_CRYPTO_LIBRARY
-    OR NOT DEFINED OPENSSL_SSL_LIBRARY
+  set(_has_openssl_libraries
+    DEFINED OPENSSL_CRYPTO_LIBRARY
+    AND DEFINED OPENSSL_SSL_LIBRARY
     )
 elseif(WIN32)
-  set(_no_openssl_libraries
-    NOT DEFINED LIB_EAY_DEBUG
-    OR NOT DEFINED LIB_EAY_RELEASE
-    OR NOT DEFINED SSL_EAY_DEBUG
-    OR NOT DEFINED SSL_EAY_RELEASE
+  set(_has_openssl_libraries
+    (DEFINED LIB_EAY_DEBUG
+    AND DEFINED SSL_EAY_DEBUG)
+    OR
+    (DEFINED LIB_EAY_RELEASE
+    AND DEFINED SSL_EAY_RELEASE)
     )
 endif()
 
-if((NOT DEFINED OPENSSL_LIBRARIES
-   OR ${_no_openssl_libraries}) AND NOT ${CMAKE_PROJECT_NAME}_USE_SYSTEM_${proj})
+if(NOT DEFINED OPENSSL_LIBRARIES
+   AND NOT (${_has_openssl_libraries}) AND NOT ${CMAKE_PROJECT_NAME}_USE_SYSTEM_${proj})
 
   #------------------------------------------------------------------------------
   if(UNIX)
-    set(OpenSSL_URL http://packages.kitware.com/download/item/6172/openssl-1.0.1e.tar.gz)
-    set(OpenSSL_MD5 66bf6f10f060d561929de96f9dfe5b8c)
+
+    set(OPENSSL_DOWNLOAD_VERSION "1.0.1e" CACHE STRING "Version of OpenSSL source package to download")
+    set_property(CACHE OPENSSL_DOWNLOAD_VERSION PROPERTY STRINGS "1.0.1e" "1.0.1l")
+
+    set(OpenSSL_1.0.1e_URL http://packages.kitware.com/download/item/6172/openssl-1.0.1e.tar.gz)
+    set(OpenSSL_1.0.1e_MD5 66bf6f10f060d561929de96f9dfe5b8c)
+
+    set(OpenSSL_1.0.1l_URL http://packages.kitware.com/download/item/7669/openssl-1.0.1l.tar.gz)
+    set(OpenSSL_1.0.1l_MD5 cdb22925fc9bc97ccbf1e007661f2aa6)
+
+    if(NOT DEFINED OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_URL)
+      message(FATAL_ERROR "There is no source version of OpenSSL ${OPENSSL_DOWNLOAD_VERSION} available.
+You could either:
+ (1) disable SSL support configuring with option Slicer_USE_PYTHONQT_WITH_OPENSSL:BOOL=OFF
+ or
+ (2) configure Slicer providing your own version of OpenSSL that matches the version
+     of OpenSSL also used to compile Qt library.
+     The options to specify are OPENSSL_INCLUDE_DIR, OPENSSL_SSL_LIBRARY, OPENSSL_CRYPTO_LIBRARY.")
+    endif()
 
     #------------------------------------------------------------------------------
     set(EP_SOURCE_DIR ${CMAKE_BINARY_DIR}/${proj})
@@ -55,7 +73,7 @@ if((NOT DEFINED OPENSSL_LIBRARIES
     # environment
     set(_env_script ${CMAKE_BINARY_DIR}/${proj}_Env.cmake)
     ExternalProject_Write_SetBuildEnv_Commands(${_env_script})
-    file(WRITE ${_env_script}
+    file(APPEND ${_env_script}
 "#------------------------------------------------------------------------------
 # Added by '${CMAKE_CURRENT_LIST_FILE}'
 include(\"${${CMAKE_PROJECT_NAME}_CMAKE_DIR}/ExternalProjectForNonCMakeProject.cmake\")
@@ -80,15 +98,17 @@ set(ENV{VS_UNICODE_OUTPUT} \"\")
     file(WRITE ${_configure_script}
 "include(\"${_env_script}\")
 set(${proj}_WORKING_DIR \"${EP_SOURCE_DIR}\")
-ExternalProject_Execute(${proj} \"configure\" sh config zlib -lzlib -L${_zlib_library_dir} shared
+ExternalProject_Execute(${proj} \"configure-zlib\" cp ${ZLIB_LIBRARY} ${_zlib_library_dir}/libz.a
+  )
+ExternalProject_Execute(${proj} \"configure\" sh config --with-zlib-lib=${_zlib_library_dir} --with-zlib-include=${ZLIB_INCLUDE_DIR} threads zlib shared
   )
 ")
 
     #------------------------------------------------------------------------------
     ExternalProject_Add(${proj}
       ${${proj}_EP_ARGS}
-      URL ${OpenSSL_URL}
-      URL_MD5 ${OpenSSL_MD5}
+      URL ${OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_URL}
+      URL_MD5 ${OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_MD5}
       DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
       SOURCE_DIR ${EP_SOURCE_DIR}
       BUILD_IN_SOURCE 1
@@ -118,13 +138,15 @@ ExternalProject_Execute(${proj} \"configure\" sh config zlib -lzlib -L${_zlib_li
     set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_LIBRARY_DIR}/libcrypto${CMAKE_SHARED_LIBRARY_SUFFIX})
     set(OPENSSL_SSL_LIBRARY ${OPENSSL_LIBRARY_DIR}/libssl${CMAKE_SHARED_LIBRARY_SUFFIX})
 
-    set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
-
     ExternalProject_Message(${proj} "OPENSSL_CRYPTO_LIBRARY:${OPENSSL_CRYPTO_LIBRARY}")
     ExternalProject_Message(${proj} "OPENSSL_SSL_LIBRARY:${OPENSSL_SSL_LIBRARY}")
 
   #------------------------------------------------------------------------------
   elseif(WIN32)
+
+    set(OPENSSL_DOWNLOAD_VERSION "1.0.1h" CACHE STRING "Version of OpenSSL pre-compiled package ot download.")
+    set_property(CACHE OPENSSL_DOWNLOAD_VERSION PROPERTY STRINGS "1.0.1h" "1.0.1l")
+
     set(_qt_version "${QT_VERSION_MAJOR}.${QT_VERSION_MINOR}.${QT_VERSION_PATCH}")
 
     # Starting with Qt 4.8.6, we compiled [1] OpenSSL binaries specifically for each
@@ -151,58 +173,57 @@ ExternalProject_Execute(${proj} \"configure\" sh config zlib -lzlib -L${_zlib_li
     # [3] http://bytes.com/topic/net/answers/505515-compile-different-versions-visual-studio
     # [4] http://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx
 
-    set(_error_msg "There is no pre-compiled version of OpenSSL available for
+    set(_error_msg "There is no pre-compiled version of OpenSSL ${OPENSSL_DOWNLOAD_VERSION} available for
 this version of visual studio [${MSVC_VERSION}]. You could either:
  (1) disable SSL support configuring with option Slicer_USE_PYTHONQT_WITH_OPENSSL:BOOL=OFF
  or
  (2) configure Slicer providing your own version of OpenSSL that matches the version
      of OpenSSL also used to compile Qt library.
-     The option to specify are OPENSSL_INCLUDE_DIR, LIB_EAY_DEBUG, LIB_EAY_RELEASE,
+     The options to specify are OPENSSL_INCLUDE_DIR, LIB_EAY_DEBUG, LIB_EAY_RELEASE,
      SSL_EAY_DEBUG and SSL_EAY_RELEASE.")
 
     #--------------------
     if(CMAKE_SIZEOF_VOID_P EQUAL 4) # 32-bit
 
-      if(_qt_version VERSION_EQUAL "4.8.5" OR _qt_version VERSION_LESS "4.8.5")
-        # OpenSSL 1.0.1e - Used to compile Qt 4.8.5
-        set(OpenSSL_URL http://packages.kitware.com/download/item/3877/OpenSSL_1_0_1e-install-32.tar.gz)
-        set(OpenSSL_MD5 aedd620319a0d3c87b03a92e2fad8f96)
-      else()
-        # OpenSSL 1.0.1h - Used to compile Qt 4.8.6
-        if(MSVC_VERSION VERSION_EQUAL "1500")
-          set(OpenSSL_URL http://packages.kitware.com/download/item/6093/OpenSSL_1_0_1h-install-msvc1500-32.tar.gz)
-          set(OpenSSL_MD5 8b110bb48063223c3b9f3a99f1fa9067)
-        elseif(MSVC_VERSION VERSION_EQUAL "1600")
-          set(OpenSSL_URL http://packages.kitware.com/download/item/6096/OpenSSL_1_0_1h-install-msvc1600-32.tar.gz)
-          set(OpenSSL_MD5 e80269ae7969276977a342cccc1df5c5)
-        else()
-          message(FATAL_ERROR ${_error_msg})
-        endif()
-      endif()
+      # OpenSSL 1.0.1h
+      # VS2008
+      set(OpenSSL_1.0.1h_1500_URL http://packages.kitware.com/download/item/6093/OpenSSL_1_0_1h-install-msvc1500-32.tar.gz)
+      set(OpenSSL_1.0.1h_1500_MD5 8b110bb48063223c3b9f3a99f1fa9067)
+      # VS2010
+      set(OpenSSL_1.0.1h_1600_URL http://packages.kitware.com/download/item/6096/OpenSSL_1_0_1h-install-msvc1600-32.tar.gz)
+      set(OpenSSL_1.0.1h_1600_MD5 e80269ae7969276977a342cccc1df5c5)
+
+      # OpenSSL 1.0.1l
+      # VS2008
+      set(OpenSSL_1.0.1l_1500_URL http://packages.kitware.com/download/item/7689/OpenSSL_1_0_1l-install-msvc1500-32.tar.gz)
+      set(OpenSSL_1.0.1l_1500_MD5 85218e0ea7bd15457f66cc04170560d5)
+      # VS2010
+      set(OpenSSL_1.0.1l_1600_URL http://packages.kitware.com/download/item/7692/OpenSSL_1_0_1l-install-msvc1600-32.tar.gz)
+      set(OpenSSL_1.0.1l_1600_MD5 3f756fc731fb95f919ea24f2ec979732)
 
     #--------------------
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64-bit
 
-      if(_qt_version VERSION_EQUAL "4.8.5" OR _qt_version VERSION_LESS "4.8.5")
-        # OpenSSL 1.0.1e - Used to compile Qt 4.8.5
-        set(OpenSSL_URL http://packages.kitware.com/download/item/3876/OpenSSL_1_0_1e-install-64.tar.gz)
-        set(OpenSSL_MD5 d57a52c20253723c17bf39594a0ebb96)
-      else()
-        # OpenSSL 1.0.1h - Used to compile Qt 4.8.6
-        if(MSVC_VERSION VERSION_EQUAL "1500")
-          set(OpenSSL_URL http://packages.kitware.com/download/item/6090/OpenSSL_1_0_1h-install-msvc1500-64.tar.gz)
-          set(OpenSSL_MD5 dab0c026ab56fd0fbfe2843d14218fad)
-        else(MSVC_VERSION VERSION_EQUAL "1600")
-          set(OpenSSL_URL http://packages.kitware.com/download/item/6099/OpenSSL_1_0_1h-install-msvc1600-64.tar.gz)
-          set(OpenSSL_MD5 b54a0a4b396397fdf96e55f0f7345dd1)
-        else()
-          message(FATAL_ERROR ${_error_msg})
-        endif()
-      endif()
+      # OpenSSL 1.0.1h
+      # VS2008
+      set(OpenSSL_1.0.1h_1500_URL http://packages.kitware.com/download/item/6090/OpenSSL_1_0_1h-install-msvc1500-64.tar.gz)
+      set(OpenSSL_1.0.1h_1500_MD5 dab0c026ab56fd0fbfe2843d14218fad)
+      # VS2010
+      set(OpenSSL_1.0.1h_1600_URL http://packages.kitware.com/download/item/6099/OpenSSL_1_0_1h-install-msvc1600-64.tar.gz)
+      set(OpenSSL_1.0.1h_1600_MD5 b54a0a4b396397fdf96e55f0f7345dd1)
+
+      # OpenSSL 1.0.1l
+      # VS2008
+      set(OpenSSL_1.0.1l_1500_URL http://packages.kitware.com/download/item/7686/OpenSSL_1_0_1l-install-msvc1500-64.tar.gz)
+      set(OpenSSL_1.0.1l_1500_MD5 ce819931504f8e7c5d9024215b2cc9cf)
+      # VS2010
+      set(OpenSSL_1.0.1l_1600_URL http://packages.kitware.com/download/item/7700/OpenSSL_1_0_1l-install-msvc1600-64.tar.gz)
+      set(OpenSSL_1.0.1l_1600_MD5 07d259e1a467d9c7a7d9cddfd77e8915)
 
     endif()
-    if(MSVC_VERSION VERSION_GREATER "1600")
-      message(WARNING "Using OpenSSL 1.0.1h compiled with Visual Studio 2010")
+
+    if(NOT DEFINED OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_${MSVC_VERSION}_URL)
+      message(FATAL_ERROR ${_error_msg})
     endif()
 
     #------------------------------------------------------------------------------
@@ -210,8 +231,8 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
 
     ExternalProject_Add(${proj}
       ${${proj}_EP_ARGS}
-      URL ${OpenSSL_URL}
-      URL_MD5 ${OpenSSL_MD5}
+      URL ${OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_${MSVC_VERSION}_URL}
+      URL_MD5 ${OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_${MSVC_VERSION}_MD5}
       DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
       SOURCE_DIR ${EP_SOURCE_DIR}
       CONFIGURE_COMMAND ""
@@ -231,7 +252,6 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
     set(OPENSSL_INCLUDE_DIR "${OpenSSL_DIR}/include")
     set(OPENSSL_LIBRARY_DIR "${OpenSSL_DIR}/lib")
     set(OPENSSL_EXPORT_LIBRARY_DIR "${OpenSSL_DIR}/bin")
-    set(OPENSSL_LIBRARIES "${OPENSSL_LIBRARY_DIR}/libeay32.lib" "${OPENSSL_LIBRARY_DIR}/ssleay32.lib")
 
     set(LIB_EAY_DEBUG "${EP_SOURCE_DIR}/Debug/lib/libeay32.lib")
     set(LIB_EAY_RELEASE "${EP_SOURCE_DIR}/Release/lib/libeay32.lib")
@@ -244,6 +264,16 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
     ExternalProject_Message(${proj} "SSL_EAY_RELEASE:${SSL_EAY_RELEASE}")
   endif()
 
+  #-----------------------------------------------------------------------------
+  # Launcher setting specific to build tree
+
+  set(${proj}_LIBRARY_PATHS_LAUNCHER_BUILD ${OPENSSL_EXPORT_LIBRARY_DIR})
+  mark_as_superbuild(
+    VARS ${proj}_LIBRARY_PATHS_LAUNCHER_BUILD
+    LABELS "LIBRARY_PATHS_LAUNCHER_BUILD"
+    )
+
+  ExternalProject_Message(${proj} "OpenSSL ${OPENSSL_DOWNLOAD_VERSION}")
   ExternalProject_Message(${proj} "OPENSSL_LIBRARY_DIR:${OPENSSL_LIBRARY_DIR}")
   ExternalProject_Message(${proj} "OPENSSL_EXPORT_LIBRARY_DIR:${OPENSSL_EXPORT_LIBRARY_DIR}")
 else()
@@ -255,9 +285,9 @@ mark_as_superbuild(
   LABELS "FIND_PACKAGE"
   )
 
+# XXX What should we do when OpenSSL is on the system or in a custom location ?
 mark_as_superbuild(
   VARS
-    OPENSSL_LIBRARIES:STRING
     OPENSSL_EXPORT_LIBRARY_DIR:PATH
   )
 
@@ -268,6 +298,12 @@ if(UNIX)
       OPENSSL_CRYPTO_LIBRARY:FILEPATH
     LABELS "FIND_PACKAGE"
     )
+  # OPENSSL_LIBRARIES
+  set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+  mark_as_superbuild(
+    VARS
+      OPENSSL_LIBRARIES:STRING
+    )
 elseif(WIN32)
   mark_as_superbuild(
     VARS
@@ -276,6 +312,19 @@ elseif(WIN32)
       SSL_EAY_DEBUG:FILEPATH
       SSL_EAY_RELEASE:FILEPATH
     LABELS "FIND_PACKAGE"
+    )
+  # OPENSSL_LIBRARIES
+  include(SelectLibraryConfigurations)
+  set(LIB_EAY_LIBRARY_DEBUG "${LIB_EAY_DEBUG}")
+  set(LIB_EAY_LIBRARY_RELEASE "${LIB_EAY_RELEASE}")
+  set(SSL_EAY_LIBRARY_DEBUG "${SSL_EAY_DEBUG}")
+  set(SSL_EAY_LIBRARY_RELEASE "${SSL_EAY_RELEASE}")
+  select_library_configurations(LIB_EAY)
+  select_library_configurations(SSL_EAY)
+  set(OPENSSL_LIBRARIES ${SSL_EAY_LIBRARY} ${LIB_EAY_LIBRARY})
+  mark_as_superbuild(
+    VARS
+      OPENSSL_LIBRARIES:STRING
     )
 endif()
 

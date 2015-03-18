@@ -3,6 +3,7 @@ from __main__ import vtk
 from __main__ import ctk
 from __main__ import qt
 from __main__ import slicer
+import EditUtil
 from EditOptions import EditOptions
 from EditorLib import EditorLib
 import LabelEffect
@@ -34,19 +35,11 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
   """
 
   def __init__(self, parent=0):
-    super(PaintEffectOptions,self).__init__(parent)
-    # option to use 'min' or 'diag'
-    # - min means pixel radius is min spacing
-    # - diag means corner to corner length
-    self.radiusPixelMode = 'min'
 
-  def __del__(self):
-    super(PaintEffectOptions,self).__del__()
-
-  def create(self):
-    super(PaintEffectOptions,self).create()
-
-    labelVolume = self.editUtil.getLabelVolume()
+    # get pixel-size-dependent parameters
+    # calculate this before calling superclass init
+    # so it can be used to set mrml defaults if needed
+    labelVolume = EditUtil.EditUtil().getLabelVolume()
     if labelVolume and labelVolume.GetImageData():
       spacing = labelVolume.GetSpacing()
       dimensions = labelVolume.GetImageData().GetDimensions()
@@ -57,6 +50,20 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
       self.minimumRadius = 0.01
       self.maximumRadius = 100
 
+    super(PaintEffectOptions,self).__init__(parent)
+
+    # option to use 'min' or 'diag'
+    # - min means pixel radius is min spacing
+    # - diag means corner to corner length
+    self.radiusPixelMode = 'min'
+
+
+  def __del__(self):
+    super(PaintEffectOptions,self).__del__()
+
+  def create(self):
+    super(PaintEffectOptions,self).create()
+
     self.radiusFrame = qt.QFrame(self.frame)
     self.radiusFrame.setLayout(qt.QHBoxLayout())
     self.frame.layout().addWidget(self.radiusFrame)
@@ -66,6 +73,7 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
     self.radiusFrame.layout().addWidget(self.radiusLabel)
     self.widgets.append(self.radiusLabel)
     self.radiusSpinBox = slicer.qMRMLSpinBox(self.radiusFrame)
+    self.radiusSpinBox.objectName = 'SpinBox_Radius'
     self.radiusSpinBox.setToolTip("Set the radius of the paint brush in millimeters")
     self.radiusSpinBox.quantity = "length"
     # QFlags not wrapped in python. Equivalent to Prefix | Suffix
@@ -81,6 +89,7 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
     self.radiusFrame.layout().addWidget(self.radiusSpinBox)
     self.widgets.append(self.radiusSpinBox)
     self.radiusUnitsToggle = qt.QPushButton("px:")
+    self.radiusUnitsToggle.objectName = 'PushButton_RadiusUnitsToggle'
     self.radiusUnitsToggle.setToolTip("Toggle radius quick set buttons between mm and label volume pixel size units")
     self.radiusUnitsToggle.setFixedWidth(35)
     self.radiusFrame.layout().addWidget(self.radiusUnitsToggle)
@@ -91,12 +100,14 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
                  (10, self.onQuickie10Clicked), (20, self.onQuickie20Clicked) )
     for rad,callback in quickies:
       self.radiusQuickies[rad] = qt.QPushButton(str(rad))
+      self.radiusQuickies[rad].objectName = 'PushButton_QuickRadius_{0}'.format(rad)
       self.radiusFrame.layout().addWidget(self.radiusQuickies[rad])
       self.radiusQuickies[rad].setFixedWidth(25)
       self.radiusQuickies[rad].connect('clicked()', callback)
       self.radiusQuickies[rad].setToolTip("Set radius based on mm or label voxel size units depending on toggle value")
 
     self.radius = ctk.ctkDoubleSlider(self.frame)
+    self.radius.objectName = 'DoubleSlider_Radius'
     self.radius.minimum = self.minimumRadius
     self.radius.maximum = self.maximumRadius
     self.radius.orientation = 1
@@ -105,16 +116,19 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
     self.widgets.append(self.radius)
 
     self.sphere = qt.QCheckBox("Sphere", self.frame)
+    self.sphere.objectName = 'CheckBox_Sphere'
     self.sphere.setToolTip("Use a 3D spherical brush rather than a 2D circular brush.")
     self.frame.layout().addWidget(self.sphere)
     self.widgets.append(self.sphere)
 
     self.smudge = qt.QCheckBox("Smudge", self.frame)
+    self.smudge.objectName = 'CheckBox_Smudge'
     self.smudge.setToolTip("Set the label number automatically by sampling the pixel location where the brush stroke starts.")
     self.frame.layout().addWidget(self.smudge)
     self.widgets.append(self.smudge)
 
     self.pixelMode = qt.QCheckBox("Pixel Mode", self.frame)
+    self.pixelMode.objectName = 'CheckBox_PixelMode'
     self.pixelMode.setToolTip("Paint exactly the pixel under the cursor, ignoring the radius, threshold, and paint over.")
     self.frame.layout().addWidget(self.pixelMode)
     self.widgets.append(self.pixelMode)
@@ -131,7 +145,7 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
     self.frame.layout().addStretch(1)
 
     # set the node parameters that are dependent on the input data
-    self.parameterNode.SetParameter( "PaintEffect,radius", str(self.minimumRadius * 10) )
+    # self.parameterNode.SetParameter( "PaintEffect,radius", str(self.minimumRadius * 10) )
 
   def destroy(self):
     super(PaintEffectOptions,self).destroy()
@@ -152,7 +166,7 @@ class PaintEffectOptions(LabelEffect.LabelEffectOptions):
     disableState = self.parameterNode.GetDisableModifiedEvent()
     self.parameterNode.SetDisableModifiedEvent(1)
     defaults = (
-      ("radius", "5"),
+      ("radius", str(self.minimumRadius * 50)),
       ("sphere", "0"),
       ("smudge", "0"),
       ("pixelMode", "0"),

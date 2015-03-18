@@ -46,7 +46,6 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent);
 
 public:
-  //TODO: To plugins?
   /// Place series in subject hierarchy. Create subject and study node if needed
   /// \return Series subject hierarchy node of the inserted series
   static vtkMRMLSubjectHierarchyNode* InsertDicomSeriesInHierarchy(
@@ -60,6 +59,12 @@ public:
   ///   on the specified level, NULL otherwise
   static vtkMRMLSubjectHierarchyNode* AreNodesInSameBranch(
     vtkMRMLNode* node1, vtkMRMLNode* node2, const char* lowestCommonLevel );
+
+  /// Determine if a tag name is a patient tag (not attribute, but tag - without prefix!)
+  static bool IsPatientTag(std::string tagName);
+
+  /// Determine if a tag name is a study tag (not attribute, but tag - without prefix!)
+  static bool IsStudyTag(std::string tagName);
 
 protected:
   /// Called each time a new scene is set

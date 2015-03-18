@@ -435,7 +435,7 @@ void vtkMRMLSliceLogic::SetupCrosshairNode()
   bool foundDefault = false;
   vtkMRMLNode* node;
   vtkCollectionSimpleIterator it;
-  vtkSmartPointer<vtkCollection> crosshairs = this->GetMRMLScene()->GetNodesByClass("vtkMRMLCrosshairNode");
+  vtkSmartPointer<vtkCollection> crosshairs = vtkSmartPointer<vtkCollection>::Take(this->GetMRMLScene()->GetNodesByClass("vtkMRMLCrosshairNode"));
   for (crosshairs->InitTraversal(it);
        (node = (vtkMRMLNode*)crosshairs->GetNextItemAsObject(it)) ;)
     {
@@ -448,7 +448,6 @@ void vtkMRMLSliceLogic::SetupCrosshairNode()
       break;
       }
     }
-  crosshairs->Delete();
 
   if (!foundDefault)
     {
@@ -771,6 +770,32 @@ void vtkMRMLSliceLogic
 {
   vtkMRMLScalarVolumeNode* volumeNode =
     vtkMRMLScalarVolumeNode::SafeDownCast( this->GetLayerVolumeNode (0) );
+    // 0 is background layer, definied in this::GetLayerVolumeNode
+  vtkMRMLScalarVolumeDisplayNode* volumeDisplayNode = NULL;
+  if (volumeNode)
+    {
+     volumeDisplayNode =
+      vtkMRMLScalarVolumeDisplayNode::SafeDownCast( volumeNode->GetVolumeDisplayNode() );
+    }
+  vtkImageData* imageData;
+  if (volumeDisplayNode && (imageData = volumeNode->GetImageData()) )
+    {
+    window = volumeDisplayNode->GetWindow();
+    level = volumeDisplayNode->GetLevel();
+    double range[2];
+    imageData->GetScalarRange(range);
+    rangeLow = range[0];
+    rangeHigh = range[1];
+    }
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLSliceLogic
+::GetForegroundWindowLevelAndRange(double& window, double& level,
+                                         double& rangeLow, double& rangeHigh)
+{
+  vtkMRMLScalarVolumeNode* volumeNode =
+    vtkMRMLScalarVolumeNode::SafeDownCast( this->GetLayerVolumeNode (1) );
     // 0 is background layer, definied in this::GetLayerVolumeNode
   vtkMRMLScalarVolumeDisplayNode* volumeDisplayNode = NULL;
   if (volumeNode)
@@ -1187,15 +1212,12 @@ void vtkMRMLSliceLogic::UpdatePipeline()
       vtkDataObject::SetPointDataActiveScalarInfo(tempMathUVWOutInfo, VTK_SHORT,
         vtkImageData::GetNumberOfScalarComponents(tempMathUVWOutInfo));
 
-      vtkImageCast *tempCastUVW = vtkImageCast::New();
+      vtkNew<vtkImageCast> tempCastUVW;
       tempCastUVW->SetInputConnection( tempMathUVW->GetOutputPort() );
       tempCastUVW->SetOutputScalarTypeToUnsignedChar();
 
       this->BlendUVW->AddInputConnection( tempCastUVW->GetOutputPort() );
       this->BlendUVW->SetOpacity( layerIndexUVW++, 1.0 );
-
-      tempMathUVW->Delete();  // Blend may still be holding a reference
-      tempCastUVW->Delete();  // Blend may still be holding a reference
       }
     else
       {

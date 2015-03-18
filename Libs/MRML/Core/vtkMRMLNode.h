@@ -31,8 +31,8 @@ class vtkMRMLScene;
 class vtkCallbackCommand;
 
 // STD includes
-#include <string>
 #include <map>
+#include <string>
 #include <vector>
 
 #ifndef vtkSetMRMLObjectMacro
@@ -174,7 +174,7 @@ public:
   ///
   /// Write this node's information to a MRML file in XML format.
   /// NOTE: Subclasses should implement this method
-  /// NOTE: Call this method in the subclass impementation
+  /// NOTE: Call this method in the subclass implementation
   virtual void WriteXML(ostream& of, int indent);
 
   ///
@@ -184,7 +184,7 @@ public:
   ///
   /// Copy parameters (not including ID and Scene) from another node of the same type.
   /// NOTE: Subclasses should implement this method
-  /// NOTE: Call this method in the subclass impementation
+  /// NOTE: Call this method in the subclass implementation
   virtual void Copy(vtkMRMLNode *node);
 
   /// Copy the references of the node into this.
@@ -200,7 +200,7 @@ public:
   void CopyWithScene(vtkMRMLNode *node);
 
   ///
-  /// Reset node attributes to the initilal state as defined in the constructor.
+  /// Reset node attributes to the initial state as defined in the constructor.
   /// NOTE:   it preserves values several dynamic attributes that may be set by an application:
   /// SaveWithScene, HideFromEditors, Selectable, SingletonTag
   /// NOTE: other attributes that needs to be preserved should be handled in the subclass
@@ -221,7 +221,7 @@ public:
   /// End modifying the node. Enable Modify events if the
   /// previous state of DisableModifiedEvent flag is 0.
   /// Return the number of pending events (even if
-  /// InvokePendingModifiedEvent is not called.
+  /// InvokePendingModifiedEvent is not called).
   virtual int EndModify(int previousDisableModifiedEventState)
     {
     this->SetDisableModifiedEvent(previousDisableModifiedEventState);
@@ -372,17 +372,51 @@ public:
   ///
   /// Invokes any modified events that are 'pending', meaning they were generated
   /// while the DisableModifiedEvent flag was nonzero.
-  /// Returns the old flag state.
+  /// Returns the total number of pending modified events that have been replaced by the just invoked modified event(s).
   virtual int InvokePendingModifiedEvent ()
     {
+    int oldModifiedEventPending = 0;
+    // Invoke pending standard Modified event
     if ( this->ModifiedEventPending )
       {
-      int oldModifiedEventPending = this->ModifiedEventPending;
+      oldModifiedEventPending += this->ModifiedEventPending;
       this->ModifiedEventPending = 0;
       Superclass::Modified();
+      }
+    // Invoke pending custom modified events
+    if (!this->CustomModifiedEventPending.empty())
+      {
+      for (std::map< int, int >::iterator it=this->CustomModifiedEventPending.begin(); it!=this->CustomModifiedEventPending.end(); ++it)
+        {
+        oldModifiedEventPending += it->second;
+        this->InvokeEvent(it->first);
+        }
+      this->CustomModifiedEventPending.clear();
+      }
       return oldModifiedEventPending;
       }
-    return this->ModifiedEventPending;
+
+  ///
+  /// This method allows the node to compress events: instead of invoking
+  /// a certain event several times, the event is called only once, for all the invocations
+  /// that are made between StartModified() and EndModified().
+  /// Typical usage is to group several ...Added, ...Removed, ...Modified events into one,
+  /// to improve performance.
+  /// callData is passed to InvokeEvent if the event is invoked immediately.
+  /// If the event is not invoked immediately then it will be sent with callData=NULL.
+  virtual void InvokeCustomModifiedEvent(int eventId, void *callData=NULL)
+    {
+    if (!this->GetDisableModifiedEvent())
+      {
+      // DisableModify is inactive, we immediately invoke the event
+      this->InvokeEvent(eventId, callData);
+      }
+    else
+      {
+      // just remember the custom modified event and invoke it once,
+      // when DisableModify is deactivated
+      ++this->CustomModifiedEventPending[eventId];
+      }
     }
 
   void CopyWithSingleModifiedEvent (vtkMRMLNode *node)
@@ -566,7 +600,7 @@ public:
     };
 protected:
   ///
-  /// class to hold information about a referenced node used by refering node
+  /// class to hold information about a referenced node used by referring node
   class VTK_MRML_EXPORT vtkMRMLNodeReference : public vtkObject
   {
   public:
@@ -748,7 +782,7 @@ private:
 
   int DisableModifiedEvent;
   int ModifiedEventPending;
-
+  std::map<int, int> CustomModifiedEventPending; // event id, pending value (number of events grouped together)
 };
 
 #endif

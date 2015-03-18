@@ -12,6 +12,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   qMRMLSubjectHierarchyTreeView.cxx
   qMRMLSubjectHierarchyTreeView.h
+  qSlicerSubjectHierarchyPluginLogic.cxx
+  qSlicerSubjectHierarchyPluginLogic.h
   qMRMLSceneSubjectHierarchyModel.cxx
   qMRMLSceneSubjectHierarchyModel.h
   qMRMLSceneSubjectHierarchyModel_p.h
@@ -27,8 +29,6 @@ set(${KIT}_SRCS
   qSlicerSubjectHierarchyDefaultPlugin.h
   qSlicerSubjectHierarchyCloneNodePlugin.cxx
   qSlicerSubjectHierarchyCloneNodePlugin.h
-  qSlicerSubjectHierarchyDICOMPlugin.cxx
-  qSlicerSubjectHierarchyDICOMPlugin.h
   qSlicerSubjectHierarchyChartsPlugin.cxx
   qSlicerSubjectHierarchyChartsPlugin.h
   qSlicerSubjectHierarchyParseLocalDataPlugin.cxx
@@ -37,10 +37,13 @@ set(${KIT}_SRCS
   qSlicerSubjectHierarchyRegisterPlugin.h
   qSlicerSubjectHierarchySegmentPlugin.cxx
   qSlicerSubjectHierarchySegmentPlugin.h
+  qSlicerSubjectHierarchyFolderPlugin.cxx
+  qSlicerSubjectHierarchyFolderPlugin.h
   )
 
 set(${KIT}_MOC_SRCS
   qMRMLSubjectHierarchyTreeView.h
+  qSlicerSubjectHierarchyPluginLogic.h
   qMRMLSceneSubjectHierarchyModel.h
   qMRMLSortFilterSubjectHierarchyProxyModel.h
   qMRMLTransformItemDelegate.h
@@ -48,11 +51,11 @@ set(${KIT}_MOC_SRCS
   qSlicerSubjectHierarchyPluginHandler.h
   qSlicerSubjectHierarchyDefaultPlugin.h
   qSlicerSubjectHierarchyCloneNodePlugin.h
-  qSlicerSubjectHierarchyDICOMPlugin.h
   qSlicerSubjectHierarchyChartsPlugin.h
   qSlicerSubjectHierarchyParseLocalDataPlugin.h
   qSlicerSubjectHierarchyRegisterPlugin.h
   qSlicerSubjectHierarchySegmentPlugin.h
+  qSlicerSubjectHierarchyFolderPlugin.h
   )
 
 set(${KIT}_UI_SRCS
@@ -68,7 +71,6 @@ set_source_files_properties( qSlicerSubjectHierarchyAbstractPlugin.h WRAP_EXCLUD
 SET (${KIT}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "" FORCE)
 
 set(${KIT}_TARGET_LIBRARIES
-  qMRMLWidgets
   vtkSlicer${MODULE_NAME}ModuleMRML
   vtkSlicer${MODULE_NAME}ModuleLogic
   MRMLCore

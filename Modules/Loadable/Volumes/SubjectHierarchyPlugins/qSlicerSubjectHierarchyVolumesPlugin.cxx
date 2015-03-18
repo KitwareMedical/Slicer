@@ -79,7 +79,7 @@ public:
   QIcon VolumeVisibilityOnIcon;
 
   QAction* ToggleLabelmapOutlineDisplayAction;
-  QAction* ShowVolumesInStudyAction;
+  QAction* ShowVolumesInBranchAction;
 };
 
 //-----------------------------------------------------------------------------
@@ -95,7 +95,7 @@ qSlicerSubjectHierarchyVolumesPluginPrivate::qSlicerSubjectHierarchyVolumesPlugi
   this->VolumeVisibilityOnIcon = QIcon(":Icons/VolumeVisibilityOn.png");
 
   this->ToggleLabelmapOutlineDisplayAction = NULL;
-  this->ShowVolumesInStudyAction = NULL;
+  this->ShowVolumesInBranchAction = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -124,8 +124,8 @@ void qSlicerSubjectHierarchyVolumesPluginPrivate::init()
   this->ToggleLabelmapOutlineDisplayAction->setCheckable(true);
   this->ToggleLabelmapOutlineDisplayAction->setChecked(false);
 
-  this->ShowVolumesInStudyAction = new QAction("Show volumes in study",q);
-  QObject::connect(this->ShowVolumesInStudyAction, SIGNAL(triggered()), q, SLOT(showVolumesInStudy()));
+  this->ShowVolumesInBranchAction = new QAction("Show volumes in branch",q);
+  QObject::connect(this->ShowVolumesInBranchAction, SIGNAL(triggered()), q, SLOT(showVolumesInBranch()));
 }
 
 //-----------------------------------------------------------------------------
@@ -187,9 +187,8 @@ QString qSlicerSubjectHierarchyVolumesPlugin::tooltip(vtkMRMLSubjectHierarchyNod
   // Get basic tooltip from abstract plugin
   QString tooltipString = Superclass::tooltip(node);
 
-  vtkMRMLScalarVolumeNode* volumeNode =
-    vtkMRMLScalarVolumeNode::SafeDownCast(node->GetAssociatedNode());
-  vtkImageData* imageData = volumeNode->GetImageData();
+  vtkMRMLScalarVolumeNode* volumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(node->GetAssociatedNode());
+  vtkImageData* imageData = (volumeNode ? volumeNode->GetImageData() : NULL);
   if (volumeNode && imageData)
     {
     int dimensions[3] = {0,0,0};
@@ -232,12 +231,6 @@ QIcon qSlicerSubjectHierarchyVolumesPlugin::icon(vtkMRMLSubjectHierarchyNode* no
       {
       return d->VolumeIcon;
       }
-    }
-
-  // Study level
-  if (node->IsLevel(vtkMRMLSubjectHierarchyConstants::SUBJECTHIERARCHY_LEVEL_STUDY))
-    {
-    return qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName("DICOM")->icon(node);
     }
 
   // Node unknown by plugin
@@ -288,12 +281,6 @@ int qSlicerSubjectHierarchyVolumesPlugin::getDisplayVisibility(vtkMRMLSubjectHie
     {
     qCritical() << "qSlicerSubjectHierarchyVolumesPlugin::getDisplayVisibility: NULL node!";
     return -1;
-    }
-
-  // Study level
-  if (node->IsLevel(vtkMRMLSubjectHierarchyConstants::SUBJECTHIERARCHY_LEVEL_STUDY))
-    {
-    return qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName("DICOM")->getDisplayVisibility(node);
     }
 
   // Sanity checks for volume
@@ -373,8 +360,10 @@ void qSlicerSubjectHierarchyVolumesPlugin::showVolume(vtkMRMLScalarVolumeNode* n
   this->updateSelectionNodeBasedOnCurrentVolumesVisibility();
 
   const char* labelmapAttribute = volumeNode->GetAttribute("LabelMap");
-  if (labelmapAttribute && strcmp(labelmapAttribute, "0")) // Labelmap
+  // Labelmap
+  if (labelmapAttribute && strcmp(labelmapAttribute, "0"))
     {
+    // Show
     if (visible)
       {
       if (selectionNode->GetActiveLabelVolumeID() && strlen(selectionNode->GetActiveLabelVolumeID()))
@@ -386,49 +375,66 @@ void qSlicerSubjectHierarchyVolumesPlugin::showVolume(vtkMRMLScalarVolumeNode* n
         }
       selectionNode->SetActiveLabelVolumeID(volumeNode->GetID());
       }
+    // Hide
     else
       {
       selectionNode->SetActiveLabelVolumeID(NULL);
       }
     qSlicerCoreApplication::application()->applicationLogic()->PropagateVolumeSelection();
     }
-  else // Not labelmap
+  // Not labelmap
+  else
     {
+    // Show
     if (visible)
       {
+      // If background is empty, show volume there
       if (!selectionNode->GetActiveVolumeID() || !strlen(selectionNode->GetActiveVolumeID()))
         {
         selectionNode->SetActiveVolumeID(volumeNode->GetID());
         }
+      // If foreground is empty, show volume there
       else if (!selectionNode->GetSecondaryVolumeID() || !strlen(selectionNode->GetSecondaryVolumeID()))
         {
         selectionNode->SetSecondaryVolumeID(volumeNode->GetID());
         }
+      // If both foreground and background are occupied, then bump background to foreground and show new volume in background
       else
         {
-        // Show volume instead of the original secondary volume
+        // Hide volume that has been foreground
+        // Needed so that visibility icon is updated (could be done in a faster way, but there is no noticeable overhead)
         vtkMRMLScalarVolumeNode* originalSecondaryVolumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(
           scene->GetNodeByID(selectionNode->GetSecondaryVolumeID()) );
-        // Needed so that visibility icon is updated (could be done in a faster way, but there is no noticeable overhead)
         this->showVolume(originalSecondaryVolumeNode, 0);
 
-        selectionNode->SetSecondaryVolumeID(volumeNode->GetID());
+        // Show volume that has been background in foreground
+        vtkMRMLScalarVolumeNode* originalActiveVolumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(
+          scene->GetNodeByID(selectionNode->GetActiveVolumeID()) );
+        selectionNode->SetSecondaryVolumeID(originalActiveVolumeNode->GetID());
+
+        // Show new volume as background
+        selectionNode->SetActiveVolumeID(volumeNode->GetID());
         }
 
+      // Set selection in slice views
       qSlicerCoreApplication::application()->applicationLogic()->PropagateVolumeSelection();
 
       // Make sure the secondary volume is shown in a semi-transparent way
-      vtkMRMLSliceCompositeNode* compositeNode = NULL;
-      int numberOfCompositeNodes = scene->GetNumberOfNodesByClass("vtkMRMLSliceCompositeNode");
-      for (int i=0; i<numberOfCompositeNodes; i++)
+      if (selectionNode->GetSecondaryVolumeID() && strlen(selectionNode->GetSecondaryVolumeID()))
         {
-        compositeNode = vtkMRMLSliceCompositeNode::SafeDownCast ( scene->GetNthNodeByClass( i, "vtkMRMLSliceCompositeNode" ) );
-        if (compositeNode && compositeNode->GetForegroundOpacity() == 0.0)
+        vtkMRMLSliceCompositeNode* compositeNode = NULL;
+        int numberOfCompositeNodes = scene->GetNumberOfNodesByClass("vtkMRMLSliceCompositeNode");
+        for (int i=0; i<numberOfCompositeNodes; i++)
           {
-          compositeNode->SetForegroundOpacity(0.5);
+          compositeNode = vtkMRMLSliceCompositeNode::SafeDownCast ( scene->GetNthNodeByClass( i, "vtkMRMLSliceCompositeNode" ) );
+          if (compositeNode && compositeNode->GetForegroundOpacity() == 0.0)
+            {
+            compositeNode->SetForegroundOpacity(0.5);
+            }
           }
         }
       }
+    // Hide
     else
       {
       if ( selectionNode->GetActiveVolumeID() && !strcmp(volumeNode->GetID(), selectionNode->GetActiveVolumeID()) )
@@ -439,6 +445,7 @@ void qSlicerSubjectHierarchyVolumesPlugin::showVolume(vtkMRMLScalarVolumeNode* n
         {
         selectionNode->SetSecondaryVolumeID(NULL);
         }
+      // Set selection in slice views
       qSlicerCoreApplication::application()->applicationLogic()->PropagateVolumeSelection();
       }
     }
@@ -572,7 +579,7 @@ QList<QAction*> qSlicerSubjectHierarchyVolumesPlugin::nodeContextMenuActions()co
   Q_D(const qSlicerSubjectHierarchyVolumesPlugin);
 
   QList<QAction*> actions;
-  actions << d->ToggleLabelmapOutlineDisplayAction << d->ShowVolumesInStudyAction;
+  actions << d->ToggleLabelmapOutlineDisplayAction << d->ShowVolumesInBranchAction;
   return actions;
 }
 
@@ -608,10 +615,12 @@ void qSlicerSubjectHierarchyVolumesPlugin::showContextMenuActionsForNode(vtkMRML
       }
     }
 
-  // Study level
-  if (node->IsLevel(vtkMRMLSubjectHierarchyConstants::SUBJECTHIERARCHY_LEVEL_STUDY))
+  // Folders (Patient, Study, Folder)
+  if ( node->IsLevel(vtkMRMLSubjectHierarchyConstants::GetDICOMLevelPatient())
+    || node->IsLevel(vtkMRMLSubjectHierarchyConstants::GetDICOMLevelStudy())
+    || node->IsLevel(vtkMRMLSubjectHierarchyConstants::GetSubjectHierarchyLevelFolder()) )
     {
-    d->ShowVolumesInStudyAction->setVisible(true);
+    d->ShowVolumesInBranchAction->setVisible(true);
     }
 }
 
@@ -630,12 +639,12 @@ void qSlicerSubjectHierarchyVolumesPlugin::toggleLabelmapOutlineDisplay(bool che
 }
 
 //---------------------------------------------------------------------------
-void qSlicerSubjectHierarchyVolumesPlugin::showVolumesInStudy()
+void qSlicerSubjectHierarchyVolumesPlugin::showVolumesInBranch()
 {
   vtkMRMLSelectionNode* selectionNode = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
   if (!selectionNode)
     {
-    qCritical() << "qSlicerSubjectHierarchyVolumesPlugin::showVolumesInStudy: Unable to get selection node";
+    qCritical() << "qSlicerSubjectHierarchyVolumesPlugin::showVolumesInBranch: Unable to get selection node";
     return;
     }
 
@@ -672,7 +681,7 @@ void qSlicerSubjectHierarchyVolumesPlugin::showVolumesInStudy()
       vtkMRMLSubjectHierarchyNode* volumeSubjectHierarchyNode = vtkMRMLSubjectHierarchyNode::GetAssociatedSubjectHierarchyNode(volumeNode);
       if (!volumeSubjectHierarchyNode)
         {
-        qCritical() << "qSlicerSubjectHierarchyVolumesPlugin::showVolumesInStudy: Unable to get subject hierarchy node!";
+        qCritical() << "qSlicerSubjectHierarchyVolumesPlugin::showVolumesInBranch: Unable to get subject hierarchy node!";
         continue;
         }
 
