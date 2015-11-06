@@ -39,6 +39,15 @@
 #include <vtkMRMLSelectionNode.h>
 #include <vtkMRMLSliceNode.h>
 
+//VTK includes
+#include <vtkRenderer.h>
+#include <vtkFlightInteractorStyle.h>
+#include <vtkThreeDViewInteractorStyle.h>
+#include <vtkNew.h>
+#include <vtkMRMLAbstractThreeDViewDisplayableManager.h>
+#include <vtkMRMLCameraDisplayableManager.h>
+
+
 //---------------------------------------------------------------------------
 // qSlicerMouseModeToolBarPrivate methods
 
@@ -46,6 +55,10 @@
 qSlicerMouseModeToolBarPrivate::qSlicerMouseModeToolBarPrivate(qSlicerMouseModeToolBar& object)
   : q_ptr(&object)
 {
+  this->InteractorStyleToolButton = 0;
+  this->InteractorStyleMenu = 0;
+  this->InteractorStyleActionGroup = 0;
+
   this->CreateAndPlaceToolButton = 0;
   this->CreateAndPlaceMenu = 0;
 
@@ -92,13 +105,56 @@ void qSlicerMouseModeToolBarPrivate::init()
   this->CreateAndPlaceToolButton->setMenu(this->CreateAndPlaceMenu);
   this->CreateAndPlaceToolButton->setPopupMode(QToolButton::MenuButtonPopup);
 
+
+  // Interaction style
+  this->InteractorStyleActionGroup = new QActionGroup(q);
+  this->InteractorStyleActionGroup->setExclusive(true);
+
+  QAction * action1 = new QAction(this->InteractorStyleMenu);
+  action1->setObjectName("TrackBallInteractorStyle");
+  action1->setText("TrackBall");
+  action1->setIconText("TrackBall");
+  action1->setCheckable(true);
+  action1->setChecked(true);
+  action1->setIcon(QIcon(":/Icons/TrackBall.png"));
+
+  QAction * action2 = new QAction(this->InteractorStyleMenu);
+  action2->setObjectName("FlightInteractorStyle");
+  action2->setText("Flight");
+  action2->setIconText("Flight");
+  action2->setCheckable(true);
+  action2->setIcon(QIcon(":/Icons/Flight.png"));
+
+  connect(action1, SIGNAL(triggered()), q, SLOT(switchToTrackBallInteractorStyle()));
+  connect(action2, SIGNAL(triggered()), q, SLOT(switchToFlightInteractorStyle()));
+
+  this->InteractorStyleActionGroup->addAction(action1);
+  this->InteractorStyleActionGroup->addAction(action2);
+
+  this->InteractorStyleMenu = new QMenu(QObject::tr("Interactor Style"), q);
+  this->InteractorStyleMenu->setObjectName("InteractorStyleMenu");
+  this->InteractorStyleMenu->addActions(this->InteractorStyleActionGroup->actions());
+  this->InteractorStyleMenu->addSeparator();
+
+  this->InteractorStyleToolButton = new QToolButton();
+  this->InteractorStyleToolButton->setObjectName("InteractorStyleToolButton");
+  this->InteractorStyleToolButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  this->InteractorStyleToolButton->setToolTip(QObject::tr("Interactor Style"));
+  this->InteractorStyleToolButton->setText(QObject::tr("[-]"));
+  this->InteractorStyleToolButton->setMenu(this->InteractorStyleMenu);
+  this->InteractorStyleToolButton->setPopupMode(QToolButton::InstantPopup);
+  this->InteractorStyleToolButton->setIcon(action1->icon());
+
   // set default action?
-
-
   q->addWidget(this->CreateAndPlaceToolButton);
+  q->addWidget(this->InteractorStyleToolButton);
 
   QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
                    this->CreateAndPlaceToolButton,
+                   SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
+
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
+                   this->InteractorStyleToolButton,
                    SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
 }
 
@@ -547,6 +603,107 @@ void qSlicerMouseModeToolBar::switchPlaceMode()
     {
     qCritical() << "qSlicerMouseModeToolBar::switchPlaceMode: unable to get selection node";
     }
+}
+
+//---------------------------------------------------------------------------
+void qSlicerMouseModeToolBar::switchToTrackBallInteractorStyle()
+{
+  if (!qSlicerApplication::application())
+    {
+    qWarning() << "switchToTrackBallInteractorStyle: can't get a qSlicerApplication";
+    return;
+    }
+  qMRMLLayoutManager *layoutManager = qSlicerApplication::application()->layoutManager();
+
+  if (!layoutManager)
+    {
+    return;
+    }
+
+  // loop through all existing threeDViews
+  vtkNew<vtkThreeDViewInteractorStyle> interactorStyle;
+  for (int i=0; i < layoutManager->threeDViewCount(); ++i)
+    {
+    qMRMLThreeDView* view = layoutManager->threeDWidget(i)->threeDView();
+    // Update Interactor style
+    this->SetInteractorStyle(view, interactorStyle.GetPointer());
+    // Reset focal point
+    view->resetFocalPoint();
+    }
+
+
+  // Update icon
+  Q_D(qSlicerMouseModeToolBar);
+  d->InteractorStyleToolButton->setIcon(QIcon(":/Icons/TrackBall.png"));
+}
+
+//---------------------------------------------------------------------------
+void qSlicerMouseModeToolBar::switchToFlightInteractorStyle()
+{
+  if (!qSlicerApplication::application())
+    {
+    qWarning() << "switchToFlightInteractorStyle: can't get a qSlicerApplication";
+    return;
+    }
+  qMRMLLayoutManager *layoutManager = qSlicerApplication::application()->layoutManager();
+
+  if (!layoutManager)
+    {
+    return;
+    }
+
+  // loop through all existing threeDViews
+  vtkNew<vtkFlightInteractorStyle> interactorStyle;
+  for (int i=0; i < layoutManager->threeDViewCount(); ++i)
+    {
+    qMRMLThreeDView* view = layoutManager->threeDWidget(i)->threeDView();
+    // Update Interactor style
+    this->SetInteractorStyle(view, interactorStyle.GetPointer());
+    }
+
+  // Update icon
+  Q_D(qSlicerMouseModeToolBar);
+  d->InteractorStyleToolButton->setIcon(QIcon(":/Icons/Flight.png"));
+}
+
+//---------------------------------------------------------------------------
+void qSlicerMouseModeToolBar::SetInteractorStyle(qMRMLThreeDView* view,
+                                                 vtkInteractorStyle* interactorStyle)
+{
+  // Set InteractorStyle on renderview
+  view->interactor()->SetInteractorStyle(interactorStyle);
+
+  // Get DMs
+  vtkNew<vtkCollection> collection;
+  view->getDisplayableManagers(collection.GetPointer());
+  int numManagers = collection->GetNumberOfItems();
+
+  // Set and Observe InteractorStyle for DM
+  for (int i = 0; i < numManagers; ++i)
+    {
+    // TODO: Should need to update the observations for all the DM
+/*
+    vtkMRMLAbstractThreeDViewDisplayableManager *threeDViewDM =
+      vtkMRMLAbstractThreeDViewDisplayableManager::SafeDownCast(collection->GetItemAsObject(i));
+    if (threeDViewDM)
+      {
+      std::cout << "\n\t" << i << " : " << threeDViewDM->GetClassName() << std::endl;
+      threeDViewDM->SetAndObserveInteractorStyle(interactorStyle);
+      }
+    else
+      {
+      std::cerr << "\tDisplayable manager " << i << " is null." << std::endl;
+      }
+*/
+    vtkMRMLCameraDisplayableManager *cameraDM =
+        vtkMRMLCameraDisplayableManager::SafeDownCast(collection->GetItemAsObject(i));
+    if (cameraDM)
+      {
+      cameraDM->SetCameraToInteractor();
+      }
+    }
+
+  collection->RemoveAllItems();
 }
 
 //---------------------------------------------------------------------------

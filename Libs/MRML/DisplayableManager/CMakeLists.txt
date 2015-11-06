@@ -103,6 +103,7 @@ set(KIT_SRCS
   vtkMRMLAbstractSliceViewDisplayableManager.cxx
   vtkMRMLSliceViewDisplayableManagerFactory.cxx
 
+  vtkFlightInteractorStyle.cxx
   vtkSliceViewInteractorStyle.cxx
   vtkThreeDViewInteractorStyle.cxx
 

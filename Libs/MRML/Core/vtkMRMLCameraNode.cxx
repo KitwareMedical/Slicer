@@ -250,7 +250,7 @@ void vtkMRMLCameraNode::Copy(vtkMRMLNode *anode)
   // a the active camera of the current view will be reset to NULL, and a
   // new camera will be created on the fly by VTK the next time an active
   // camera is need, one completely disconnected from Slicer3's MRML/internals
-  this->SetInternalActiveTag(node->GetActiveTag());
+  // this->SetInternalActiveTag(node->GetActiveTag());
   // Maybe the new position and focalpoint combo doesn't fit the existing
   // clipping range
   this->ResetClippingRange();
