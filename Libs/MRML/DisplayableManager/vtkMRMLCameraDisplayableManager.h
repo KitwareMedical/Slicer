@@ -41,6 +41,7 @@ public:
   virtual void RemoveMRMLObservers();
 
   void UpdateCameraNode();
+  void SetCameraToInteractor();
 
   vtkMRMLCameraNode* GetCameraNode();
 
@@ -75,7 +76,6 @@ protected:
   void SetAndObserveCameraNode(vtkMRMLCameraNode * newCameraNode);
   virtual void AdditionalInitializeStep();
   void SetCameraToRenderer();
-  void SetCameraToInteractor();
 
 private:
 
