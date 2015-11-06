@@ -93,6 +93,11 @@ public:
   vtkSmartPointer<vtkMRMLScene>            MRMLScene;
   vtkSmartPointer<vtkMRMLApplicationLogic> MRMLAppLogic;
 
+  /// InteractorStyle button and menu
+  QToolButton * InteractorStyleToolButton;
+  QMenu*        InteractorStyleMenu;
+  QActionGroup* InteractorStyleActionGroup;
+
   /// PlaceMode button and menu
   QToolButton *CreateAndPlaceToolButton;
   QMenu*        CreateAndPlaceMenu;

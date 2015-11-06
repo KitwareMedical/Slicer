@@ -28,6 +28,10 @@
 // CTK includes
 #include "qSlicerBaseQTGUIExport.h"
 
+// VTK/MRML includes
+#include "qMRMLThreeDView.h"
+#include "vtkInteractorStyle.h"
+
 class qSlicerMouseModeToolBarPrivate;
 class vtkMRMLScene;
 class vtkSlicerApplicationLogic;
@@ -76,6 +80,10 @@ public slots:
 
   /// Update the interaction node's persistent place mode from the UI
   void setPersistence(bool persistent);
+
+  void switchToTrackBallInteractorStyle();
+  void switchToFlightInteractorStyle();
+  void SetInteractorStyle(qMRMLThreeDView* view, vtkInteractorStyle* interactorStyle);
 
 protected:
   QScopedPointer<qSlicerMouseModeToolBarPrivate> d_ptr;
