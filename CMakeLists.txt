@@ -563,6 +563,7 @@ if(${VTK_VERSION_MAJOR} GREATER 5)
     vtkGUISupportQtOpenGL
     vtkGUISupportQtWebkit
     vtkGUISupportQtSQL
+    vtkIOFFMPEG # Add for video export support
     vtkIOImage
     vtkIOLegacy
     vtkIOPLY
