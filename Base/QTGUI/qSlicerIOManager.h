@@ -177,7 +177,7 @@ bool qSlicerIOManager::openAddFiducialDialog()
 //-----------------------------------------------------------------------------
 bool qSlicerIOManager::openAddMarkupsDialog()
 {
-  return this->openDialog(QString("MarkupsFiducials"), qSlicerFileDialog::Read);
+  return this->openDialog(QString("Markups"), qSlicerFileDialog::Read);
 }
 
 //-----------------------------------------------------------------------------
