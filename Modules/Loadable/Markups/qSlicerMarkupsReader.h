@@ -21,12 +21,14 @@
 // SlicerQt includes
 #include "qSlicerFileReader.h"
 
+#include "qSlicerMarkupsModuleExport.h"
+
 class qSlicerMarkupsReaderPrivate;
 class vtkSlicerMarkupsLogic;
 
 //----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_Markups
-class qSlicerMarkupsReader
+class Q_SLICER_QTMODULES_MARKUPS_EXPORT qSlicerMarkupsReader
   : public qSlicerFileReader
 {
   Q_OBJECT
