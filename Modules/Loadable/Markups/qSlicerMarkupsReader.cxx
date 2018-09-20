@@ -112,11 +112,6 @@ bool qSlicerMarkupsReader::load(const IOProperties& properties)
     name = properties["name"].toString();
     }
 
-  if (d->MarkupsLogic.GetPointer() == 0)
-    {
-    return false;
-    }
-
   // pass to logic to do the loading
   char * nodeIDs = this->load(fileName, name);
 
