@@ -38,6 +38,7 @@ public:
   virtual QStringList extensions()const;
 
 protected:
+  using qSlicerMarkupsReader::load;
   virtual char* load(const QString& filename, const QString& name);
 
 private:
