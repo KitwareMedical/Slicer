@@ -27,6 +27,7 @@
 // MRML includes
 #include "vtkMRMLNode.h"
 
+class vtkMRMLInteractionNode;
 class vtkMRMLModelNode;
 class vtkStringArray;
 
@@ -98,6 +99,11 @@ public:
   vtkGetMacro(Visibility, int);
   vtkSetMacro(Visibility, int);
 
+  /// Get interaction node.
+  /// If no node has been explicitly set, it the singleton interaction node.
+  vtkMRMLInteractionNode* GetInteractionNode();
+  bool SetInteractionNodeID(const char *interactionNodeId);
+  bool SetInteractionNode(vtkMRMLNode* node);
 
   /// Indicates whether or not the view is mapped in the current layout.
   /// \sa GetVisibility()
@@ -286,6 +292,7 @@ protected:
   vtkSmartPointer<vtkStringArray> AxisLabels;
 
   static const char* ParentLayoutNodeReferenceRole;
+  static const char* InteractionNodeReferenceRole;
 };
 
 //------------------------------------------------------------------------------
