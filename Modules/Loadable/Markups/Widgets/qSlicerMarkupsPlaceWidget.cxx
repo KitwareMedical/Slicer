@@ -181,6 +181,25 @@ vtkMRMLMarkupsFiducialNode* qSlicerMarkupsPlaceWidget::currentMarkupsFiducialNod
 }
 
 //-----------------------------------------------------------------------------
+vtkMRMLInteractionNode* qSlicerMarkupsPlaceWidget::interactionNode()const
+{
+  Q_D(const qSlicerMarkupsPlaceWidget);
+  return d->InteractionNode;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerMarkupsPlaceWidget::setInteractionNode(vtkMRMLInteractionNode* interactionNode)
+{
+  Q_D(qSlicerMarkupsPlaceWidget);
+  if (d->InteractionNode == interactionNode)
+    {
+    return;
+    }
+  this->qvtkReconnect(d->InteractionNode, interactionNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidget()));
+  d->InteractionNode = interactionNode;
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerMarkupsPlaceWidget::setCurrentNode(vtkMRMLNode* currentNode)
 {
   Q_D(qSlicerMarkupsPlaceWidget);
@@ -448,10 +467,11 @@ void qSlicerMarkupsPlaceWidget::setMRMLScene(vtkMRMLScene* scene)
     interactionNode = vtkMRMLInteractionNode::SafeDownCast( d->MarkupsLogic->GetMRMLScene()->GetNodeByID( "vtkMRMLInteractionNodeSingleton" ) );
     }
 
+  this->setInteractionNode(interactionNode);
+
   this->qvtkReconnect(d->SelectionNode, selectionNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidget()));
-  this->qvtkReconnect(d->InteractionNode, interactionNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidget()));
   d->SelectionNode = selectionNode;
-  d->InteractionNode = interactionNode;
+
   this->updateWidget();
 }
 

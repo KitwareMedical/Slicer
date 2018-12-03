@@ -27,6 +27,7 @@
 #include <vtkMRMLApplicationLogic.h>
 
 // MRML includes
+#include <vtkMRMLAbstractViewNode.h>
 #include <vtkMRMLInteractionNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLSelectionNode.h>
@@ -532,6 +533,9 @@ vtkMRMLAbstractDisplayableManager::vtkMRMLAbstractDisplayableManager()
   this->AddObserver(vtkCommand::DeleteEvent, this->Internal->DeleteCallBackCommand);
   // Default observable event associated with DisplayableNode
   this->AddMRMLDisplayableManagerEvent(vtkCommand::ModifiedEvent);
+  this->AddMRMLDisplayableManagerEvent(vtkMRMLNode::ReferenceAddedEvent);
+  this->AddMRMLDisplayableManagerEvent(vtkMRMLNode::ReferenceRemovedEvent);
+  this->AddMRMLDisplayableManagerEvent(vtkMRMLNode::ReferenceModifiedEvent);
 
   // Setup widgets callback
   vtkObserverManager * widgetsObserver = this->Internal->WidgetsObserverManager;
@@ -577,9 +581,7 @@ void vtkMRMLAbstractDisplayableManager::CreateIfPossible()
     assert(this->GetMRMLDisplayableNode());
 
     // Look for InteractionNode
-    this->Internal->MRMLInteractionNode = vtkMRMLInteractionNode::SafeDownCast(
-        this->GetMRMLScene()->GetNodeByID("vtkMRMLInteractionNodeSingleton"));
-    if (!this->Internal->MRMLInteractionNode)
+    if (!this->GetInteractionNode())
       {
       vtkWarningMacro( << "CreateIfPossible - MRMLScene does NOT contain any InteractionNode");
       }
@@ -699,11 +701,21 @@ int vtkMRMLAbstractDisplayableManager::ActiveInteractionModes() {
 void vtkMRMLAbstractDisplayableManager::ProcessMRMLNodesEvents(
   vtkObject* caller, unsigned long event, void * callData)
 {
-  if (caller == this->GetMRMLDisplayableNode() &&
-      event == vtkCommand::ModifiedEvent)
+  if (caller == this->GetMRMLDisplayableNode())
     {
-    this->OnMRMLDisplayableNodeModifiedEvent(caller);
-    return;
+      if(event == vtkCommand::ModifiedEvent)
+        {
+        this->OnMRMLDisplayableNodeModifiedEvent(caller);
+        return;
+        }
+      else if(event == vtkMRMLNode::ReferenceAddedEvent ||
+              event == vtkMRMLNode::ReferenceRemovedEvent ||
+              event == vtkMRMLNode::ReferenceModifiedEvent)
+        {
+        // Update interaction node
+        vtkMRMLAbstractViewNode* viewNode = vtkMRMLAbstractViewNode::SafeDownCast(this->GetMRMLDisplayableNode());
+        this->Internal->SetAndObserveMRMLInteractionNode(viewNode->GetInteractionNode());
+        }
     }
   this->Superclass::ProcessMRMLNodesEvents(caller, event, callData);
 }
@@ -796,12 +808,11 @@ void vtkMRMLAbstractDisplayableManager::SetAndObserveMRMLDisplayableNode(
     sceneToObserve = newMRMLDisplayableNode->GetScene();
 
     // Observe InteractionNode
-    vtkMRMLInteractionNode *interactionNode = vtkMRMLInteractionNode::SafeDownCast (
-        sceneToObserve->GetNodeByID("vtkMRMLInteractionNodeSingleton"));
+    vtkMRMLAbstractViewNode* viewNode = vtkMRMLAbstractViewNode::SafeDownCast(newMRMLDisplayableNode);
+    vtkMRMLInteractionNode *interactionNode = viewNode->GetInteractionNode();
+    this->Internal->SetAndObserveMRMLInteractionNode(interactionNode);
     if (interactionNode)
       {
-      // Observe MRML InteractionNode only if a valid MRML DisplayableNode is set
-      this->Internal->SetAndObserveMRMLInteractionNode(newMRMLDisplayableNode ? interactionNode : 0);
       this->Internal->UpdateInteractorStyle();
       }
     else
