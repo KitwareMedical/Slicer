@@ -71,10 +71,10 @@ public:
   // get the layout for the "bar" in the view controller. this layout
   // is an HBoxLayout. It itself is packed in a VBoxLayout that
   // contains the "bar" and other controllers.
-  QLayout* barLayout();
+  Q_INVOKABLE QLayout* barLayout();
 
   // get the widget for the "bar" in the view controller.
-  QWidget* barWidget();
+  Q_INVOKABLE QWidget* barWidget();
 
 protected:
   QScopedPointer<qMRMLViewControllerBarPrivate> d_ptr;
