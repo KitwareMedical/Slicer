@@ -389,6 +389,7 @@ void qMRMLSliceControllerWidgetPrivate::init()
   //  </widget>
   // </item>
   this->FitToWindowToolButton = new QToolButton(q);
+  this->FitToWindowToolButton->setObjectName("FitToWindowToolButton");
   //this->FitToWindowToolButton->setToolTip(tr("Adjust the Slice Viewer's field of view to match the extent of lowest non-None volume layer (bg, then fg, then label)."));
   //QIcon fitToWindowIcon(":/Icons/SlicesFitToWindow.png");
   //this->FitToWindowToolButton->setIcon(fitToWindowIcon);
@@ -398,6 +399,7 @@ void qMRMLSliceControllerWidgetPrivate::init()
   this->BarLayout->insertWidget(2, this->FitToWindowToolButton);
 
   this->SliceOffsetSlider = new qMRMLSliderWidget(q);
+  this->SliceOffsetSlider->setObjectName("SliceOffsetSlider");
   this->SliceOffsetSlider->setTracking(false);
   this->SliceOffsetSlider->setToolTip(q->tr("Slice distance from RAS origin"));
   this->SliceOffsetSlider->setQuantity("length");
