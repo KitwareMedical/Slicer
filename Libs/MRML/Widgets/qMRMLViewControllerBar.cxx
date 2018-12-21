@@ -180,10 +180,10 @@ void qMRMLViewControllerBarPrivate::setColor(QColor barColor)
   gradient.setColorAt(1.0, QColor::fromHsv(hue, sat, qMin(255., 191 * valueCoef)));
   palette.setBrush(QPalette::Window, gradient);
   palette.setBrush(QPalette::Text, Qt::black);
-  this->BarWidget->setPalette(palette);
+  //this->BarWidget->setPalette(palette);
 
   QPalette labelPalette(barColor.lighter(130));
-  this->ViewLabel->setPalette(labelPalette);
+  //this->ViewLabel->setPalette(labelPalette);
 }
 
 //---------------------------------------------------------------------------
