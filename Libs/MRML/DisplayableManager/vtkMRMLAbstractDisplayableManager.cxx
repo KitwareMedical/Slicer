@@ -190,6 +190,7 @@ vtkMRMLAbstractDisplayableManager::vtkInternal::vtkInternal(
   this->InteractorStyleObservableEvents.push_back(std::make_pair(vtkCommand::MouseWheelForwardEvent,0.0));
   this->InteractorStyleObservableEvents.push_back(std::make_pair(vtkCommand::EnterEvent,0.0));
   this->InteractorStyleObservableEvents.push_back(std::make_pair(vtkCommand::LeaveEvent,0.0));
+  this->InteractorStyleObservableEvents.push_back(std::make_pair(vtkCommand::CharEvent,0.0));
 }
 
 //-----------------------------------------------------------------------------
