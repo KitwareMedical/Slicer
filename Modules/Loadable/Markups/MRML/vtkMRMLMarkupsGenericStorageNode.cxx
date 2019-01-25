@@ -414,7 +414,7 @@ int vtkMRMLMarkupsGenericStorageNode::WriteDataInternal(vtkMRMLNode *refNode)
 
   char writeBuffer[4096];
   rapidjson::FileWriteStream writeStream(file, writeBuffer, sizeof(writeBuffer));
-  rapidjson::Writer<rapidjson::FileWriteStream> writer(writeStream);
+  rapidjson::PrettyWriter<rapidjson::FileWriteStream> writer(writeStream);
   if (!markupsRoot->Accept(writer))
     {
     vtkErrorMacro(
