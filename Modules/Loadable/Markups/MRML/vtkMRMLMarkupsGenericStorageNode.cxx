@@ -236,10 +236,8 @@ int vtkMRMLMarkupsGenericStorageNode::ReadDataInternal(vtkMRMLNode *refNode)
     }
   if (!displayNode)
     {
-    vtkWarningMacro("vtkMRMLMarkupsGenericStorageNode: no display node!");
     if (this->GetScene())
       {
-      vtkWarningMacro("vtkMRMLMarkupsGenericStorageNode: adding a new display node.");
       displayNode = vtkMRMLMarkupsDisplayNode::New();
       this->GetScene()->AddNode(displayNode);
       markupsNode->SetAndObserveDisplayNodeID(displayNode->GetID());
