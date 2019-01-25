@@ -565,7 +565,7 @@ bool vtkMRMLMarkupsNode::RemovePointFromNthMarkup(int pointIndex, int n)
     {
     return false;
     }
-  this->Markups[n].points.erase(this->Markups[n].points.begin() + n);
+  this->Markups[n].points.erase(this->Markups[n].points.begin() + pointIndex);
   int markupIndex = n;
   this->InvokeCustomModifiedEvent(
     vtkMRMLMarkupsNode::NthMarkupModifiedEvent, (void*)&markupIndex);
