@@ -380,7 +380,6 @@ bool vtkMRMLMarkupsNode::MarkupExists(int n)
     }
   if (n >= this->GetNumberOfMarkups())
     {
-    vtkErrorMacro("MarkupExists: n of " << n << " must be less than the current number of markups, " << this->GetNumberOfMarkups());
     return false;
     }
   else
