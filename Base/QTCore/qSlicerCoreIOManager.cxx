@@ -63,11 +63,13 @@ public:
   QMap<qSlicerIO::IOFileType, QStringList> FileTypes;
 
   QString DefaultSceneFileType;
+  bool Verbose;
 };
 
 //-----------------------------------------------------------------------------
 qSlicerCoreIOManagerPrivate::qSlicerCoreIOManagerPrivate()
 {
+  this->Verbose = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -442,6 +444,20 @@ bool qSlicerCoreIOManager::loadFile(const QString& fileName)
 }
 
 //-----------------------------------------------------------------------------
+bool qSlicerCoreIOManager::verbose() const
+{
+  Q_D(const qSlicerCoreIOManager);
+  return d->Verbose;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerCoreIOManager::setVerbose(bool value)
+{
+  Q_D(qSlicerCoreIOManager);
+  d->Verbose = value;;
+}
+
+//-----------------------------------------------------------------------------
 bool qSlicerCoreIOManager::loadNodes(const qSlicerIO::IOFileType& fileType,
 #if QT_VERSION < 0x040700
                                      const QVariantMap& parameters,
@@ -497,10 +513,13 @@ bool qSlicerCoreIOManager::loadNodes(const qSlicerIO::IOFileType& fileType,
       continue;
       }
     float elapsedTimeInSeconds = timeProbe.elapsed() / 1000.0;
-    qDebug() << reader->description() << "Reader has successfully read the file"
-             << parameters["fileName"].toString()
-             << QString("[%1s]").arg(
-                  QString::number(elapsedTimeInSeconds,'f', 2));
+    if (d->Verbose)
+      {
+      qDebug() << reader->description() << "Reader has successfully read the file"
+               << parameters["fileName"].toString()
+               << QString("[%1s]").arg(
+                    QString::number(elapsedTimeInSeconds,'f', 2));
+      }
     nodes << reader->loadedNodes();
     success = true;
     break;

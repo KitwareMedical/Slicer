@@ -47,6 +47,7 @@ class Q_SLICER_BASE_QTCORE_EXPORT qSlicerCoreIOManager:public QObject
 {
   Q_OBJECT;
   Q_PROPERTY(QString defaultSceneFileType READ defaultSceneFileType WRITE setDefaultSceneFileType)
+  Q_PROPERTY(bool verbose READ verbose WRITE setVerbose)
 
 public:
   qSlicerCoreIOManager(QObject* parent = 0);
@@ -85,6 +86,13 @@ public:
   /// If .* is not in the complete list of known suffixes, returns an empty suffix.
   /// Always includes the leading dot.
   Q_INVOKABLE QString completeSlicerWritableFileNameSuffix(vtkMRMLStorableNode *node)const;
+
+  /// Return True if reading or writing should output a summary.
+  /// \sa setVerbose()
+  bool verbose() const;
+
+  /// \sa verbose()
+  void setVerbose(bool value);
 
   /// Load a list of nodes corresponding to \a fileType. A given \a fileType corresponds
   /// to a specific reader qSlicerIO.
