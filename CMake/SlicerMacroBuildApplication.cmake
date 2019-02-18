@@ -620,7 +620,7 @@ macro(slicerMacroBuildApplication)
         # Splash screen
         SPLASH_IMAGE_PATH ${SLICERAPP_LAUNCHER_SPLASHSCREEN_FILE}
         SPLASH_IMAGE_INSTALL_SUBDIR ${Slicer_BIN_DIR}
-        SPLASHSCREEN_HIDE_DELAY_MS 1000
+        SPLASHSCREEN_HIDE_DELAY_MS 3000
         # Slicer arguments triggering display of launcher help
         HELP_SHORT_ARG "-h"
         HELP_LONG_ARG "--help"
