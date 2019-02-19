@@ -222,7 +222,10 @@ ctkFileDialog* qSlicerStandardFileDialog::createFileDialog(
     fileDialog->setOption(QFileDialog::ShowDirsOnly);
     fileDialog->setFileMode(QFileDialog::DirectoryOnly);
     }
-
+  if (ioProperties.contains("windowTitle"))
+    {
+    fileDialog->setWindowTitle(ioProperties["windowTitle"].toString());
+    }
   fileDialog->setObjectName(ioProperties["objectName"].toString());
 
   return fileDialog;
