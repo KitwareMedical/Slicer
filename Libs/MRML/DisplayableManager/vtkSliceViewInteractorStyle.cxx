@@ -587,11 +587,11 @@ void vtkSliceViewInteractorStyle::OnMouseMove()
 //----------------------------------------------------------------------------
 void vtkSliceViewInteractorStyle::OnMouseWheelForward()
 {
-  if (this->Interactor->GetControlKey() && this->GetActionEnabled(vtkSliceViewInteractorStyle::Zoom))
+  /*if (this->Interactor->GetControlKey() && this->GetActionEnabled(vtkSliceViewInteractorStyle::Zoom))
     {
     this->ScaleZoom(0.8);
     }
-  else if (this->GetActionEnabled(vtkSliceViewInteractorStyle::BrowseSlice)) // && (!this->Interactor->GetShiftKey())
+  else*/ if (this->GetActionEnabled(vtkSliceViewInteractorStyle::BrowseSlice)) // && (!this->Interactor->GetShiftKey())
     {
     this->IncrementSlice();
     }
@@ -601,11 +601,11 @@ void vtkSliceViewInteractorStyle::OnMouseWheelForward()
 //----------------------------------------------------------------------------
 void vtkSliceViewInteractorStyle::OnMouseWheelBackward()
 {
-  if (this->Interactor->GetControlKey() && this->GetActionEnabled(vtkSliceViewInteractorStyle::Zoom))
+  /*if (this->Interactor->GetControlKey() && this->GetActionEnabled(vtkSliceViewInteractorStyle::Zoom))
     {
     this->ScaleZoom(1.2);
     }
-  else if (this->GetActionEnabled(vtkSliceViewInteractorStyle::BrowseSlice)) // && (!this->Interactor->GetShiftKey())
+  else*/ if (this->GetActionEnabled(vtkSliceViewInteractorStyle::BrowseSlice)) // && (!this->Interactor->GetShiftKey())
     {
     this->DecrementSlice();
     }
