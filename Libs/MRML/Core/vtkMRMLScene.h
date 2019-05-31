@@ -731,7 +731,20 @@ public:
   /// If \a modifiedStorableNodes is passed the modified nodes are appended.
   /// Note that the nodes see their reference count being incremented while
   /// being in the list. Don't forget to clear it as soon as you don't need it.
+  ///
+  /// \sa GetStorableNodesModifiedSinceReadByClass()
   bool GetStorableNodesModifiedSinceRead(vtkCollection* modifiedStorableNodes = nullptr);
+
+  /// \brief Search the scene for storable nodes of specified class that are
+  /// "ModifiedSinceRead".
+  ///
+  /// Returns true if at least 1 matching node is found.
+  /// If \a modifiedStorableNodes is passed the modified nodes are appended.
+  /// Note that the nodes see their reference count being incremented while
+  /// being in the list. Don't forget to clear it as soon as you don't need it.
+  ///
+  /// \sa GetStorableNodesModifiedSinceRead()
+  bool GetStorableNodesModifiedSinceReadByClass(const char* className, vtkCollection* modifiedStorableNodes = nullptr);
 
   /// \brief Search the scene for storable nodes that are not "ModifiedSinceRead".
   ///
