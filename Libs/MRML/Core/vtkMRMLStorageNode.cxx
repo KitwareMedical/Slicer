@@ -1211,6 +1211,12 @@ vtkTimeStamp vtkMRMLStorageNode::GetStoredTime()
 }
 
 //----------------------------------------------------------------------------
+void vtkMRMLStorageNode::StoredModified()
+{
+  this->StoredTime->Modified();
+}
+
+//----------------------------------------------------------------------------
 bool vtkMRMLStorageNode::CanReadInReferenceNode(vtkMRMLNode *refNode)
 {
   // Must be reimplemented in subclass;
