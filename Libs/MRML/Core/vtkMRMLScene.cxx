@@ -3572,10 +3572,21 @@ bool vtkMRMLScene::GetModifiedSinceRead()
 bool vtkMRMLScene
 ::GetStorableNodesModifiedSinceRead(vtkCollection* modifiedStorableNodes)
 {
+  return this->GetStorableNodesModifiedSinceReadByClass("vtkMRMLStorableNode", modifiedStorableNodes);
+}
+
+//-----------------------------------------------------------------------------
+bool vtkMRMLScene::GetStorableNodesModifiedSinceReadByClass(const char* className, vtkCollection* modifiedStorableNodes)
+{
+  if (className == NULL)
+    {
+    vtkErrorMacro("GetStorableNodesModifiedSinceReadByClass: class name is null.");
+    return false;
+    }
   bool found = false;
   vtkSmartPointer<vtkCollection> storableNodes;
   storableNodes.TakeReference(
-    this->GetNodesByClass("vtkMRMLStorableNode"));
+    this->GetNodesByClass(className));
   vtkCollectionSimpleIterator it;
   vtkMRMLStorableNode* storableNode;
   for (storableNodes->InitTraversal(it);
