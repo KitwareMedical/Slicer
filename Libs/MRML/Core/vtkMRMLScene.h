@@ -725,6 +725,10 @@ public:
   /// since the last time it was read or written.
   bool GetModifiedSinceRead();
 
+  /// Allows external code to mark that the scene storage time as modified
+  /// and should therefore NOT be selected for saving.
+  void StoredModified();
+
   /// \brief Search the scene for storable nodes that are "ModifiedSinceRead".
   ///
   /// Returns true if at least 1 matching node is found.

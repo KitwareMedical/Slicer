@@ -288,6 +288,10 @@ public:
   /// read in or written from.
   vtkTimeStamp GetStoredTime();
 
+  /// Allows external code to mark that the storage node has been modified
+  /// and should therefore NOT be selected for saving.
+  void StoredModified();
+
   /// Return true if the node can be read in. Used by ReadData to know
   /// if the file can be read into the reference node.
   /// Subclasses must reimplement the method.

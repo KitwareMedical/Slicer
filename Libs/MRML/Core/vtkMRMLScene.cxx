@@ -3588,6 +3588,12 @@ bool vtkMRMLScene::GetModifiedSinceRead()
 }
 
 //-----------------------------------------------------------------------------
+void vtkMRMLScene::StoredModified()
+{
+  this->StoredTime.Modified();
+}
+
+//-----------------------------------------------------------------------------
 bool vtkMRMLScene
 ::GetStorableNodesModifiedSinceRead(vtkCollection* modifiedStorableNodes)
 {
