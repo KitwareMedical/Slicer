@@ -66,12 +66,12 @@ void vtkThreeDViewInteractorStyle::OnChar()
     }
 
   // Ignore KeyPad strokes, they are handled by OnKeyPress instead.
-  if (strncmp(this->Interactor->GetKeySym(), "KP_", 3) == 0 ||
-      this->Interactor->GetKeyCode() == '3')
-    {
-    return;
-    }
-  this->Superclass::OnChar();
+//  if (strncmp(this->Interactor->GetKeySym(), "KP_", 3) == 0 ||
+//      this->Interactor->GetKeyCode() == '3')
+//    {
+//    return;
+//    }
+//  this->Superclass::OnChar();
 }
 
 //----------------------------------------------------------------------------
@@ -79,112 +79,112 @@ void vtkThreeDViewInteractorStyle::OnKeyPress()
 {
   this->Superclass::OnKeyPress();
 
-  if(!this->CameraNode)
-    {
-    vtkErrorMacro("OnKeyPress: camera node is null");
-    return;
-    }
+//  if(!this->CameraNode)
+//    {
+//    vtkErrorMacro("OnKeyPress: camera node is null");
+//    return;
+//    }
 
-  const char* keySym = this->Interactor->GetKeySym();
+//  const char* keySym = this->Interactor->GetKeySym();
 
-  if (!keySym)
-    {
-    vtkErrorMacro("OnKeyPress: could not retrieve KeySym");
-    return;
-    }
+//  if (!keySym)
+//    {
+//    vtkErrorMacro("OnKeyPress: could not retrieve KeySym");
+//    return;
+//    }
 
-  bool shift = (this->Interactor->GetShiftKey() != 0);
+//  bool shift = (this->Interactor->GetShiftKey() != 0);
 
-  if (strcmp(keySym, "KP_1") == 0 ||
-      strcmp(keySym, "End") == 0)
-    {
-    this->CameraNode->RotateTo(
-      shift ? vtkMRMLCameraNode::Posterior : vtkMRMLCameraNode::Anterior );
-    }
-  else if (strcmp(keySym, "KP_3") == 0 ||
-           strcmp(keySym, "Next") == 0) // PageDown
-    {
-    this->CameraNode->RotateTo(
-      shift ? vtkMRMLCameraNode::Right : vtkMRMLCameraNode::Left);
-    }
-  else if (strcmp(keySym, "KP_7") == 0 ||
-           strcmp(keySym, "Home") == 0)
-    {
-    this->CameraNode->RotateTo(
-      shift ? vtkMRMLCameraNode::Inferior : vtkMRMLCameraNode::Superior);
-    }
-  else if (strcmp(keySym, "KP_2") == 0 ||
-           strcmp(keySym, "Down") == 0)
-    {
-    if (shift)
-      {
-      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::Y, false);
-      }
-    else
-      {
-      this->CameraNode->RotateAround(vtkMRMLCameraNode::R, true);
-      }
-    }
-  else if (strcmp(keySym, "KP_8") == 0 ||
-           strcmp(keySym, "Up") == 0)
-    {
-    if (shift)
-      {
-      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::Y, true);
-      }
-    else
-      {
-      this->CameraNode->RotateAround(vtkMRMLCameraNode::R, false);
-      }
-    }
-  else if (strcmp(keySym, "KP_4") == 0 ||
-           strcmp(keySym, "Left") == 0)
-    {
-    if (shift)
-      {
-      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::X, true);
-      }
-    else
-      {
-      this->CameraNode->RotateAround(vtkMRMLCameraNode::S, true);
-      }
-    }
-  else if (strcmp(keySym, "KP_6") == 0 ||
-           strcmp(keySym, "Right") == 0)
-    {
-    if (shift)
-      {
-      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::X, false);
-      }
-    else
-      {
-      this->CameraNode->RotateAround(vtkMRMLCameraNode::S, false);
-      }
-    }
-  else if (strcmp(keySym, "KP_5") == 0 ||
-           strcmp(keySym, "Clear") == 0)
-    {
-    this->CameraNode->Reset(
-      !shift,
-      shift,
-      false,
-      this->Interactor->FindPokedRenderer(0,0));
-    }
-  else if (strcmp(keySym, "KP_0") == 0 ||
-           strcmp(keySym, "Insert") == 0)
-    {
-    this->CameraNode->Reset(
-      true, true, true,
-      this->Interactor->FindPokedRenderer(0,0));
-    }
-  else if (strcmp(keySym, "plus") == 0)
-    {
-    this->Dolly(1.2);
-    }
-  else if (strcmp(keySym, "minus") == 0)
-    {
-    this->Dolly(0.8);
-    }
+//  if (strcmp(keySym, "KP_1") == 0 ||
+//      strcmp(keySym, "End") == 0)
+//    {
+//    this->CameraNode->RotateTo(
+//      shift ? vtkMRMLCameraNode::Posterior : vtkMRMLCameraNode::Anterior );
+//    }
+//  else if (strcmp(keySym, "KP_3") == 0 ||
+//           strcmp(keySym, "Next") == 0) // PageDown
+//    {
+//    this->CameraNode->RotateTo(
+//      shift ? vtkMRMLCameraNode::Right : vtkMRMLCameraNode::Left);
+//    }
+//  else if (strcmp(keySym, "KP_7") == 0 ||
+//           strcmp(keySym, "Home") == 0)
+//    {
+//    this->CameraNode->RotateTo(
+//      shift ? vtkMRMLCameraNode::Inferior : vtkMRMLCameraNode::Superior);
+//    }
+//  else if (strcmp(keySym, "KP_2") == 0 ||
+//           strcmp(keySym, "Down") == 0)
+//    {
+//    if (shift)
+//      {
+//      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::Y, false);
+//      }
+//    else
+//      {
+//      this->CameraNode->RotateAround(vtkMRMLCameraNode::R, true);
+//      }
+//    }
+//  else if (strcmp(keySym, "KP_8") == 0 ||
+//           strcmp(keySym, "Up") == 0)
+//    {
+//    if (shift)
+//      {
+//      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::Y, true);
+//      }
+//    else
+//      {
+//      this->CameraNode->RotateAround(vtkMRMLCameraNode::R, false);
+//      }
+//    }
+//  else if (strcmp(keySym, "KP_4") == 0 ||
+//           strcmp(keySym, "Left") == 0)
+//    {
+//    if (shift)
+//      {
+//      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::X, true);
+//      }
+//    else
+//      {
+//      this->CameraNode->RotateAround(vtkMRMLCameraNode::S, true);
+//      }
+//    }
+//  else if (strcmp(keySym, "KP_6") == 0 ||
+//           strcmp(keySym, "Right") == 0)
+//    {
+//    if (shift)
+//      {
+//      this->CameraNode->TranslateAlong(vtkMRMLCameraNode::X, false);
+//      }
+//    else
+//      {
+//      this->CameraNode->RotateAround(vtkMRMLCameraNode::S, false);
+//      }
+//    }
+//  else if (strcmp(keySym, "KP_5") == 0 ||
+//           strcmp(keySym, "Clear") == 0)
+//    {
+//    this->CameraNode->Reset(
+//      !shift,
+//      shift,
+//      false,
+//      this->Interactor->FindPokedRenderer(0,0));
+//    }
+//  else if (strcmp(keySym, "KP_0") == 0 ||
+//           strcmp(keySym, "Insert") == 0)
+//    {
+//    this->CameraNode->Reset(
+//      true, true, true,
+//      this->Interactor->FindPokedRenderer(0,0));
+//    }
+//  else if (strcmp(keySym, "plus") == 0)
+//    {
+//    this->Dolly(1.2);
+//    }
+//  else if (strcmp(keySym, "minus") == 0)
+//    {
+//    this->Dolly(0.8);
+//    }
 }
 
 //----------------------------------------------------------------------------
