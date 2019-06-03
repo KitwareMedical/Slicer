@@ -83,7 +83,7 @@ protected:
   /// key that follows this format "/MyListKeyName/0".
   /// \sa TranslationMap()
   virtual int ReadMarkupsNodeFromTranslationMap(
-    vtkMRMLMarkupsNode* markups, TranslationMap& markupsMap);
+    vtkMRMLMarkupsNode* markupsNode, TranslationMap& markupsMap);
 
   /// Use Read/WriteNthMarkupFromTranslationMap to add properties that will
   /// be read/written for each of the node's markups. For example, the
@@ -92,16 +92,16 @@ protected:
   /// \sa ReadMarkupsNodeFromTranslationMap()
   virtual int ReadNthMarkupFromTranslationMap(
     int n, std::string key,
-    vtkMRMLMarkupsNode* markups, TranslationMap& markupsMap);
+    vtkMRMLMarkupsNode* markupsNode, TranslationMap& markupsMap);
 
   /// \sa ReadMarkupsNodeFromTranslationMap()
   virtual int WriteMarkupsNodeToTranslationMap(
-    vtkMRMLMarkupsNode* markups, TranslationMap& markupsMap);
+    vtkMRMLMarkupsNode* markupsNode, TranslationMap& markupsMap);
 
   /// \sa ReadNthMarkupFromTranslationMap()
   virtual int WriteNthMarkupToTranslationMap(
     int n, std::string key,
-    vtkMRMLMarkupsNode* markups, TranslationMap& markupsMap);
+    vtkMRMLMarkupsNode* markupsNode, TranslationMap& markupsMap);
 
   class vtkInternal;
   vtkInternal* Internal;
