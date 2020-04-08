@@ -15,7 +15,7 @@ Each branch is named following the pattern `kitware-custom-app-vY.Y.Z-YYYY-MM-DD
 
 where:
 
-* `kitware-custom-app` is the name of the custom application (if it can be publicly disclosed)
+* `kitware-custom-app` is the name of the custom application (if it can **NOT** be publicly disclosed)
 * `vX.Y.Z` is the version of Slicer
 * `YYYY-MM-DD` is the date of the last official commit associated with the branch.
 * `SHA{N}` are the first N characters of the last official commit associated with the branch.
