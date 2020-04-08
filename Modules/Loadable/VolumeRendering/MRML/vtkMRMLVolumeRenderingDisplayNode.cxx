@@ -92,7 +92,7 @@ void vtkMRMLVolumeRenderingDisplayNode::ReadXMLAttributes(const char** atts)
   vtkMRMLReadXMLIntMacro(croppingEnabled, CroppingEnabled);
   vtkMRMLReadXMLVectorMacro(threshold, Threshold, double, 2);
   vtkMRMLReadXMLVectorMacro(windowLevel, WindowLevel, double, 2);
-  vtkMRMLReadXMLIntMacro(followVolumeDisplayNode, FollowVolumeDisplayNode);
+  //vtkMRMLReadXMLIntMacro(followVolumeDisplayNode, FollowVolumeDisplayNode);
   vtkMRMLReadXMLIntMacro(ignoreVolumeDisplayNodeThreshold, IgnoreVolumeDisplayNodeThreshold);
   vtkMRMLReadXMLIntMacro(useSingleVolumeProperty, UseSingleVolumeProperty);
   vtkMRMLReadXMLEndMacro();
