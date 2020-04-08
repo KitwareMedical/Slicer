@@ -22,3 +22,10 @@ where:
 
 For more details, see https://www.slicer.org/wiki/Documentation/Nightly/Developers/ProjectForks
 
+What is the relationship between Slicer/Slicer and Slicer/SlicerGitSVNArchive ?
+-------------------------------------------------------------------------------
+
+Following the [transition](https://discourse.slicer.org/t/transition-to-github/10358) to using GitHub as the only repository for organizing Slicer sources, former Slicer GitHub repository has been renamed to [Slicer/SlicerGitSVNArchive](https://github.com/Slicer/SlicerGitSVNArchive).
+
+To ensure existing Kitware projects can still build, this repository was **NOT** renamed. That said, new branches related to the new [Slicer/Slicer](https://github.com/Slicer/Slicer) repository should still be published in this fork.
+
