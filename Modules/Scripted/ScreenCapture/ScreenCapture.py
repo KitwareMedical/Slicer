@@ -64,11 +64,13 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     #
     self.inputCollapsibleButton = ctk.ctkCollapsibleButton()
     self.inputCollapsibleButton.text = "Input"
+    self.inputCollapsibleButton.objectName = 'inputCollapsibleButton'
     self.layout.addWidget(self.inputCollapsibleButton)
     inputFormLayout = qt.QFormLayout(self.inputCollapsibleButton)
 
     # Input view selector
     self.viewNodeSelector = slicer.qMRMLNodeComboBox()
+    self.viewNodeSelector.objectName = 'viewNodeSelector'
     self.viewNodeSelector.nodeTypes = ["vtkMRMLSliceNode", "vtkMRMLViewNode"]
     self.viewNodeSelector.addEnabled = False
     self.viewNodeSelector.removeEnabled = False
@@ -82,12 +84,14 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
 
     # Mode
     self.animationModeWidget = qt.QComboBox()
+    self.animationModeWidget.objectName = 'animationModeWidget'
     self.animationModeWidget.setToolTip("Select the property that will be adjusted")
     inputFormLayout.addRow("Animation mode:", self.animationModeWidget)
 
     # Slice start offset position
     self.sliceStartOffsetSliderLabel = qt.QLabel("Start sweep offset:")
     self.sliceStartOffsetSliderWidget = ctk.ctkSliderWidget()
+    self.sliceStartOffsetSliderWidget.objectName = 'sliceStartOffsetSliderWidget'
     self.sliceStartOffsetSliderWidget.singleStep = 30
     self.sliceStartOffsetSliderWidget.minimum = -100
     self.sliceStartOffsetSliderWidget.maximum = 100
@@ -98,6 +102,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # Slice end offset position
     self.sliceEndOffsetSliderLabel = qt.QLabel("End sweep offset:")
     self.sliceEndOffsetSliderWidget = ctk.ctkSliderWidget()
+    self.sliceEndOffsetSliderWidget.objectName = 'sliceEndOffsetSliderWidget'
     self.sliceEndOffsetSliderWidget.singleStep = 5
     self.sliceEndOffsetSliderWidget.minimum = -100
     self.sliceEndOffsetSliderWidget.maximum = 100
@@ -108,6 +113,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # 3D rotation range
     self.rotationSliderLabel = qt.QLabel("Rotation range:")
     self.rotationSliderWidget = ctk.ctkRangeWidget()
+    self.rotationSliderWidget.objectName = 'rotationSliderWidget'
     self.rotationSliderWidget.singleStep = 5
     self.rotationSliderWidget.minimum = -180
     self.rotationSliderWidget.maximum = 180
@@ -119,6 +125,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # 3D rotation axis
     self.rotationAxisLabel = qt.QLabel("Rotation axis:")
     self.rotationAxisWidget = ctk.ctkRangeWidget()
+    self.rotationAxisWidget.objectName = 'rotationAxisWidget'
     self.rotationAxisWidget = qt.QComboBox()
     self.rotationAxisWidget.addItem("Yaw", AXIS_YAW)
     self.rotationAxisWidget.addItem("Pitch", AXIS_PITCH)
@@ -128,6 +135,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # Sequence browser node selector
     self.sequenceBrowserNodeSelectorLabel = qt.QLabel("Sequence:")
     self.sequenceBrowserNodeSelectorWidget = slicer.qMRMLNodeComboBox()
+    self.sequenceBrowserNodeSelectorWidget.objectName = 'sequenceBrowserNodeSelectorWidget'
     self.sequenceBrowserNodeSelectorWidget.nodeTypes = ["vtkMRMLSequenceBrowserNode"]
     self.sequenceBrowserNodeSelectorWidget.addEnabled = False
     self.sequenceBrowserNodeSelectorWidget.removeEnabled = False
@@ -140,6 +148,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # Sequence start index
     self.sequenceStartItemIndexLabel = qt.QLabel("Start index:")
     self.sequenceStartItemIndexWidget = ctk.ctkSliderWidget()
+    self.sequenceStartItemIndexWidget.objectName = 'sequenceStartItemIndexWidget'
     self.sequenceStartItemIndexWidget.minimum = 0
     self.sequenceStartItemIndexWidget.decimals = 0
     self.sequenceStartItemIndexWidget.setToolTip("First item in the sequence to capture.")
@@ -148,6 +157,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # Sequence end index
     self.sequenceEndItemIndexLabel = qt.QLabel("End index:")
     self.sequenceEndItemIndexWidget = ctk.ctkSliderWidget()
+    self.sequenceEndItemIndexWidget.objectName = 'sequenceEndItemIndexWidget'
     self.sequenceEndItemIndexWidget.minimum = 0
     self.sequenceEndItemIndexWidget.decimals = 0
     self.sequenceEndItemIndexWidget.setToolTip("Last item in the sequence to capture.")
@@ -158,11 +168,13 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     #
     self.outputCollapsibleButton = ctk.ctkCollapsibleButton()
     self.outputCollapsibleButton.text = "Output"
+    self.outputCollapsibleButton.objectName = 'outputCollapsibleButton'
     self.layout.addWidget(self.outputCollapsibleButton)
     outputFormLayout = qt.QFormLayout(self.outputCollapsibleButton)
 
     # Number of steps value
     self.numberOfStepsSliderWidget = ctk.ctkSliderWidget()
+    self.numberOfStepsSliderWidget.objectName = 'numberOfStepsSliderWidget'
     self.numberOfStepsSliderWidget.singleStep = 1
     self.numberOfStepsSliderWidget.pageStep = 10
     self.numberOfStepsSliderWidget.minimum = 1
@@ -173,6 +185,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
 
     # Single step toggle button
     self.singleStepButton = qt.QToolButton()
+    self.singleStepButton.objectName = 'singleStepButton'
     self.singleStepButton.setText("single")
     self.singleStepButton.setCheckable(True)
     self.singleStepButton.toolTip = "Capture a single image of current state only.\n" + \
@@ -185,6 +198,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
 
     # Output directory selector
     self.outputDirSelector = ctk.ctkPathLineEdit()
+    self.outputDirSelector.objectName = 'outputDirSelector'
     self.outputDirSelector.sizeAdjustPolicy = ctk.ctkPathLineEdit.AdjustToMinimumContentsLength
     self.outputDirSelector.filters = ctk.ctkPathLineEdit.Dirs
     self.outputDirSelector.settingKey = 'ScreenCaptureOutputDir'
@@ -194,11 +208,13 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
       self.outputDirSelector.setCurrentPath(defaultOutputPath)
 
     self.captureAllViewsCheckBox = qt.QCheckBox(" ")
+    self.captureAllViewsCheckBox.objectName = 'captureAllViewsCheckBox'
     self.captureAllViewsCheckBox.checked = False
     self.captureAllViewsCheckBox.setToolTip("If checked, all views will be captured. If unchecked then only the selected view will be captured.")
     outputFormLayout.addRow("Capture all views:", self.captureAllViewsCheckBox)
 
     self.outputTypeWidget = qt.QComboBox()
+    self.outputTypeWidget.objectName = 'outputTypeWidget'
     self.outputTypeWidget.setToolTip("Select how captured images will be saved. Video mode requires setting of ffmpeg executable path in Advanced section.")
     self.outputTypeWidget.addItem("image series")
     self.outputTypeWidget.addItem("video")
@@ -206,11 +222,13 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     inputFormLayout.addRow("Output type:", self.outputTypeWidget)
 
     self.videoFileNameWidget = qt.QLineEdit()
+    self.videoFileNameWidget.objectName = 'videoFileNameWidget'
     self.videoFileNameWidget.setToolTip("String that defines file name and type.")
     self.videoFileNameWidget.text = "SlicerCapture.avi"
     self.videoFileNameWidget.setEnabled(False)
 
     self.lightboxImageFileNameWidget = qt.QLineEdit()
+    self.lightboxImageFileNameWidget.objectName = 'lightboxImageFileNameWidget'
     self.lightboxImageFileNameWidget.setToolTip("String that defines output lightbox file name and type.")
     self.lightboxImageFileNameWidget.text = "SlicerCaptureLightbox.png"
     self.lightboxImageFileNameWidget.setEnabled(False)
@@ -221,6 +239,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     outputFormLayout.addRow("Output file name:", hbox)
 
     self.videoLengthSliderWidget = ctk.ctkSliderWidget()
+    self.videoLengthSliderWidget.objectName = 'videoLengthSliderWidget'
     self.videoLengthSliderWidget.singleStep = 0.1
     self.videoLengthSliderWidget.minimum = 0.1
     self.videoLengthSliderWidget.maximum = 30
@@ -232,6 +251,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     outputFormLayout.addRow("Video length:", self.videoLengthSliderWidget)
 
     self.videoFrameRateSliderWidget = ctk.ctkSliderWidget()
+    self.videoFrameRateSliderWidget.objectName = 'videoFrameRateSliderWidget'
     self.videoFrameRateSliderWidget.singleStep = 0.1
     self.videoFrameRateSliderWidget.minimum = 0.1
     self.videoFrameRateSliderWidget.maximum = 60
@@ -246,17 +266,20 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     # Advanced area
     #
     self.advancedCollapsibleButton = ctk.ctkCollapsibleButton()
+    self.advancedCollapsibleButton.objectName = 'advancedCollapsibleButton'
     self.advancedCollapsibleButton.text = "Advanced"
     self.advancedCollapsibleButton.collapsed = True
     outputFormLayout.addRow(self.advancedCollapsibleButton)
     advancedFormLayout = qt.QFormLayout(self.advancedCollapsibleButton)
 
     self.forwardBackwardCheckBox = qt.QCheckBox(" ")
+    self.forwardBackwardCheckBox.objectName = 'forwardBackwardCheckBox'
     self.forwardBackwardCheckBox.checked = False
     self.forwardBackwardCheckBox.setToolTip("If checked, image series will be generated playing forward and then backward.")
     advancedFormLayout.addRow("Forward-backward:", self.forwardBackwardCheckBox)
 
     self.repeatSliderWidget = ctk.ctkSliderWidget()
+    self.repeatSliderWidget.objectName = 'repeatSliderWidget'
     self.repeatSliderWidget.decimals = 0
     self.repeatSliderWidget.singleStep = 1
     self.repeatSliderWidget.minimum = 1
@@ -268,6 +291,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
 
     ffmpegPath = self.logic.getFfmpegPath()
     self.ffmpegPathSelector = ctk.ctkPathLineEdit()
+    self.ffmpegPathSelector.objectName = 'ffmpegPathSelector'
     self.ffmpegPathSelector.sizeAdjustPolicy = ctk.ctkPathLineEdit.AdjustToMinimumContentsLength
     self.ffmpegPathSelector.setCurrentPath(ffmpegPath)
     self.ffmpegPathSelector.nameFilters = [self.logic.getFfmpegExecutableFilename()]
@@ -277,11 +301,13 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
 
     self.videoExportFfmpegWarning = qt.QLabel('<qt><b><font color="red">Set valid ffmpeg executable path! '+
       '<a href="http://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/ScreenCapture#Setting_up_ffmpeg">Help...</a></font></b></qt>')
+    self.videoExportFfmpegWarning.objectName = 'videoExportFfmpegWarning'
     self.videoExportFfmpegWarning.connect('linkActivated(QString)', self.openURL)
     self.videoExportFfmpegWarning.setVisible(False)
     advancedFormLayout.addRow("", self.videoExportFfmpegWarning)
 
     self.videoFormatWidget = qt.QComboBox()
+    self.videoFormatWidget.objectName = 'videoFormatWidget'
     self.videoFormatWidget.enabled = False
     self.videoFormatWidget.setSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Preferred)
     for videoFormatPreset in self.logic.videoFormatPresets:
@@ -289,18 +315,21 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     advancedFormLayout.addRow("Video format:", self.videoFormatWidget)
 
     self.extraVideoOptionsWidget = qt.QLineEdit()
+    self.extraVideoOptionsWidget.objectName = 'extraVideoOptionsWidget'
     self.extraVideoOptionsWidget.setToolTip('Additional video conversion options passed to ffmpeg. Parameters -i (input files), -y'
       +'(overwrite without asking), -r (frame rate), -start_number are specified by the module and therefore'
       +'should not be included in this list.')
     advancedFormLayout.addRow("Video extra options:", self.extraVideoOptionsWidget)
 
     self.fileNamePatternWidget = qt.QLineEdit()
+    self.fileNamePatternWidget.objectName = 'fileNamePatternWidget'
     self.fileNamePatternWidget.setToolTip(
       "String that defines file name, type, and numbering scheme. Default: image%05d.png.")
     self.fileNamePatternWidget.text = "image_%05d.png"
     advancedFormLayout.addRow("Image file name pattern:", self.fileNamePatternWidget)
 
     self.lightboxColumnCountSliderWidget = ctk.ctkSliderWidget()
+    self.lightboxColumnCountSliderWidget.objectName = 'lightboxColumnCountSliderWidget'
     self.lightboxColumnCountSliderWidget.decimals = 0
     self.lightboxColumnCountSliderWidget.singleStep = 1
     self.lightboxColumnCountSliderWidget.minimum = 1
@@ -310,6 +339,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     advancedFormLayout.addRow("Lightbox image columns:", self.lightboxColumnCountSliderWidget)
 
     self.maxFramesWidget = qt.QSpinBox()
+    self.maxFramesWidget.objectName = 'maxFramesWidget'
     self.maxFramesWidget.setRange(1, 9999)
     self.maxFramesWidget.setValue(600)
     self.maxFramesWidget.setToolTip(
@@ -317,6 +347,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     advancedFormLayout.addRow("Maximum number of images:", self.maxFramesWidget)
 
     self.transparentBackgroundCheckBox = qt.QCheckBox(" ")
+    self.transparentBackgroundCheckBox.objectName = 'transparentBackgroundCheckBox'
     self.transparentBackgroundCheckBox.checked = False
     self.transparentBackgroundCheckBox.setToolTip("If checked, images will be captured with transparent background.")
     advancedFormLayout.addRow("Transparent background:", self.transparentBackgroundCheckBox)
@@ -324,10 +355,12 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
     watermarkEnabled = slicer.util.settingsValue('ScreenCapture/WatermarkEnabled', False, converter=slicer.util.toBool)
 
     self.watermarkEnabledCheckBox = qt.QCheckBox(" ")
+    self.watermarkEnabledCheckBox.objectName = 'watermarkEnabledCheckBox'
     self.watermarkEnabledCheckBox.checked = watermarkEnabled
     self.watermarkEnabledCheckBox.setToolTip("If checked, selected watermark image will be added to all exported images.")
 
     self.watermarkPositionWidget = qt.QComboBox()
+    self.watermarkPositionWidget.objectName = 'watermarkPositionWidget'
     self.watermarkPositionWidget.enabled = watermarkEnabled
     self.watermarkPositionWidget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.Preferred)
     self.watermarkPositionWidget.setToolTip("Add a watermark image to all exported images.")
@@ -337,6 +370,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
       slicer.util.settingsValue('ScreenCapture/WatermarkPosition', self.logic.watermarkPositionPresets[0]["name"]))
 
     self.watermarkSizeSliderWidget = qt.QSpinBox()
+    self.watermarkSizeSliderWidget.objectName = 'watermarkSizeSliderWidget'
     self.watermarkSizeSliderWidget.enabled = watermarkEnabled
     self.watermarkSizeSliderWidget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.Preferred)
     self.watermarkSizeSliderWidget.singleStep = 10
@@ -351,6 +385,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
       pass
 
     self.watermarkOpacitySliderWidget = qt.QSpinBox()
+    self.watermarkOpacitySliderWidget.objectName = 'watermarkOpacitySliderWidget'
     self.watermarkOpacitySliderWidget.enabled = watermarkEnabled
     self.watermarkOpacitySliderWidget.setSizePolicy(qt.QSizePolicy.MinimumExpanding, qt.QSizePolicy.Preferred)
     self.watermarkOpacitySliderWidget.singleStep = 10
@@ -365,6 +400,7 @@ class ScreenCaptureWidget(ScriptedLoadableModuleWidget):
       pass
 
     self.watermarkPathSelector = ctk.ctkPathLineEdit()
+    self.watermarkPathSelector.objectName = 'watermarkPathSelector'
     self.watermarkPathSelector.enabled = watermarkEnabled
     self.watermarkPathSelector.settingKey = 'ScreenCaptureWatermarkImagePath'
     self.watermarkPathSelector.nameFilters = ["*.png"]
