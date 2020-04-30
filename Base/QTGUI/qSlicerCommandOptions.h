@@ -37,6 +37,10 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerCommandOptions : public qSlicerCoreComma
   Q_PROPERTY(bool showPythonInteractor READ showPythonInteractor CONSTANT)
   Q_PROPERTY(bool enableQtTesting READ enableQtTesting CONSTANT)
   Q_PROPERTY(bool exitAfterStartup READ exitAfterStartup CONSTANT)
+  // CellLocator
+  Q_PROPERTY(QString referenceView READ referenceView CONSTANT)
+  Q_PROPERTY(int viewAngle READ viewAngle CONSTANT)
+  Q_PROPERTY(QString annotationFilePath READ annotationFilePath CONSTANT)
 public:
   typedef qSlicerCoreCommandOptions Superclass;
   qSlicerCommandOptions();
@@ -53,6 +57,12 @@ public:
   bool enableQtTesting()const;
 
   bool exitAfterStartup()const;
+
+  QString referenceView()const;
+
+  int viewAngle()const;
+
+  QString annotationFilePath()const;
 
 protected:
   void addArguments() override;
