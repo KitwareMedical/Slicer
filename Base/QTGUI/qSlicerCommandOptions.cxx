@@ -72,6 +72,25 @@ bool qSlicerCommandOptions::exitAfterStartup()const
 }
 
 //-----------------------------------------------------------------------------
+QString qSlicerCommandOptions::referenceView()const
+{
+  return this->parsedArgs().value("reference-view").toString();
+}
+
+//-----------------------------------------------------------------------------
+int qSlicerCommandOptions::viewAngle()const
+{
+  return this->parsedArgs().value("view-angle").toInt();
+}
+
+//-----------------------------------------------------------------------------
+QString qSlicerCommandOptions::annotationFilePath()const
+{
+  return this->parsedArgs().value("annotation-file").toString();
+}
+
+
+//-----------------------------------------------------------------------------
 void qSlicerCommandOptions::addArguments()
 {
   this->Superclass::addArguments();
@@ -100,4 +119,13 @@ void qSlicerCommandOptions::addArguments()
 
   this->addArgument("exit-after-startup", "", QVariant::Bool,
                     "Exit after startup is complete. Useful for measuring startup time");
+
+  this->addArgument("reference-view", "", QVariant::String,
+                    "Axial, Coronal or Sagittal");
+
+  this->addArgument("view-angle", "", QVariant::Int,
+                    "Angle in degree");
+
+  this->addArgument("annotation-file", "", QVariant::String,
+                    "Path to an existing annotation file");
 }
