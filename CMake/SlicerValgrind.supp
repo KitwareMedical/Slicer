@@ -416,12 +416,12 @@
    ...
 }
 #
-# Python suppressions copied from Python-2.7.13/Misc/valgrind-python.supp
+# Python suppressions copied from Python-2.7.15/Misc/valgrind-python.supp
 #
 # Since these suppressions are commented by default in "valgrind-python.supp",
 # we copied and enabled them here.
 #
-# For more details, read Python-2.7.13/Misc/README.valgrind
+# For more details, read Python-2.7.15/Misc/README.valgrind
 #
 {
    Handle PyMalloc confusing valgrind (possibly leaked)
