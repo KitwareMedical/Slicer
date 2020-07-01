@@ -89,6 +89,15 @@ QString qSlicerCommandOptions::annotationFilePath()const
   return this->parsedArgs().value("annotation-file").toString();
 }
 
+int qSlicerCommandOptions::limsSpecimenID()const
+{
+    return this->parsedArgs().value("lims-specimen-id").toInt();
+}
+
+QString qSlicerCommandOptions::limsBaseURL()const
+{
+    return this->parsedArgs().value("lims-base-url").toString();
+}
 
 //-----------------------------------------------------------------------------
 void qSlicerCommandOptions::addArguments()
@@ -128,4 +137,10 @@ void qSlicerCommandOptions::addArguments()
 
   this->addArgument("annotation-file", "", QVariant::String,
                     "Path to an existing annotation file");
+
+  this->addArgument("lims-specimen-id", "", QVariant::Int,
+                    "LIMS specimen id");
+
+  this->addArgument("lims-base-url", "", QVariant::String,
+                    "LIMS base url");
 }
