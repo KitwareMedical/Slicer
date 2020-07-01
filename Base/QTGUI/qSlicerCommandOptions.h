@@ -41,6 +41,8 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerCommandOptions : public qSlicerCoreComma
   Q_PROPERTY(QString referenceView READ referenceView CONSTANT)
   Q_PROPERTY(int viewAngle READ viewAngle CONSTANT)
   Q_PROPERTY(QString annotationFilePath READ annotationFilePath CONSTANT)
+  Q_PROPERTY(int limsSpecimenID READ limsSpecimenID CONSTANT)
+  Q_PROPERTY(QString limsBaseURL READ limsBaseURL CONSTANT)
 public:
   typedef qSlicerCoreCommandOptions Superclass;
   qSlicerCommandOptions();
@@ -63,6 +65,10 @@ public:
   int viewAngle()const;
 
   QString annotationFilePath()const;
+
+  int limsSpecimenID()const;
+
+  QString limsBaseURL()const;
 
 protected:
   void addArguments() override;
