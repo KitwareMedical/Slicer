@@ -90,9 +90,10 @@ qSlicerModuleSelectorToolBarPrivate::qSlicerModuleSelectorToolBarPrivate(qSlicer
 void qSlicerModuleSelectorToolBarPrivate::init()
 {
   Q_Q(qSlicerModuleSelectorToolBar);
-  QIcon previousIcon = q->style()->standardIcon(QStyle::SP_ArrowLeft);
-  QIcon nextIcon = q->style()->standardIcon(QStyle::SP_ArrowRight);
+  QIcon previousIcon(":Icons/Previous.png");
+  QIcon nextIcon(":Icons/Next.png");
   QIcon historyIcon(":Icons/ModuleHistory.png");
+  QIcon searchIcon(":Icons/Search.png");
 
   // Modules Label
   q->addWidget(new QLabel(qSlicerModuleSelectorToolBar::tr("Modules:"), q));
@@ -129,6 +130,8 @@ void qSlicerModuleSelectorToolBarPrivate::init()
                    q, SLOT(onModuleSelected(QString)));
   this->ModulesComboBox->setMenu(this->ModulesMenu);
   this->ModulesComboBox->setSearchIconVisible(false); // we use the module finder instead;
+  this->ModulesComboBox->toolButtonInternal()->setShortcut(QKeySequence("Ctrl+F"));
+  this->ModulesComboBox->toolButtonInternal()->setIcon(searchIcon);
 
   // History
   this->HistoryMenu = new QMenu(qSlicerModuleSelectorToolBar::tr("Modules history"), q);
