@@ -126,7 +126,7 @@ void qMRMLSubjectHierarchyModelPrivate::init()
   q->horizontalHeaderItem(q->transformColumn())->setToolTip(qMRMLSubjectHierarchyModel::tr("Applied transform"));
   q->horizontalHeaderItem(q->idColumn())->setToolTip(qMRMLSubjectHierarchyModel::tr("Node ID"));
 
-  q->horizontalHeaderItem(q->visibilityColumn())->setIcon(QIcon(":/Icons/Small/SlicerVisibleInvisible.png"));
+  //q->horizontalHeaderItem(q->visibilityColumn())->setIcon(QIcon(":/Icons/Small/SlicerVisibleInvisible.png"));
   q->horizontalHeaderItem(q->colorColumn())->setIcon(QIcon(":/Icons/Colors.png"));
   q->horizontalHeaderItem(q->transformColumn())->setIcon(QIcon(":/Icons/Transform.png"));
 
