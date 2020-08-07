@@ -643,7 +643,7 @@ QCursor qSlicerSegmentEditorAbstractEffect::createCursor(qMRMLWidget* viewWidget
     return QCursor(cursorPixmap, baseImage.width()/2, 0);
     }
 
-  QImage effectImage(effectIcon.pixmap(effectIcon.availableSizes()[0]).toImage());
+  QImage effectImage(effectIcon.pixmap(21,21).toImage());
   int width = qMax(baseImage.width(), effectImage.width());
   int pad = -9;
   int height = pad + baseImage.height() + effectImage.height();
