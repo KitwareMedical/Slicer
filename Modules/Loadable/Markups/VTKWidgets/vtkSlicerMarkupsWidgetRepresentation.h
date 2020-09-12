@@ -154,6 +154,9 @@ public:
   /// Get the origin of the interaction handle widget
   virtual void GetInteractionHandleOriginWorld(double origin[3]);
 
+  /// Set the visibility and interactability of the interaction handles
+  void SetInteractionPipelineVisibility(bool value);
+
 protected:
   vtkSlicerMarkupsWidgetRepresentation();
   ~vtkSlicerMarkupsWidgetRepresentation() override;
@@ -223,6 +226,8 @@ protected:
     double                                              StartFadeAngle{30};
     double                                              EndFadeAngle{20};
     double                                              InteractionHandleScaleFactor{7.0};
+
+    bool                                                Visibility;
 
     virtual void InitializePipeline();
     virtual void CreateRotationHandles();
