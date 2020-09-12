@@ -162,6 +162,9 @@ public:
   /// Get the direction vector of the interaction handle from the interaction origin in world coordinates
   virtual void GetInteractionHandleVectorWorld(int type, int index, double axis[3]);
 
+  /// Set the visibility and interactability of the interaction handles
+  void SetInteractionPipelineVisibility(bool value);
+
 protected:
   vtkSlicerMarkupsWidgetRepresentation();
   ~vtkSlicerMarkupsWidgetRepresentation() override;
@@ -225,6 +228,8 @@ protected:
 
     double                                              StartFadeAngle;
     double                                              EndFadeAngle;
+
+    bool                                                Visibility;
 
     virtual void InitializePipeline();
     virtual void CreateRotationHandles();

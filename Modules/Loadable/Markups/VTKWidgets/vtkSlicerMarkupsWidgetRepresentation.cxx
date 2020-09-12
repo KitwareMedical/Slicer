@@ -575,7 +575,8 @@ void vtkSlicerMarkupsWidgetRepresentation::UpdateInteractionPipeline()
     return;
     }
 
-  this->InteractionPipeline->Actor->SetVisibility(this->MarkupsDisplayNode->GetHandlesInteractive());
+  this->InteractionPipeline->Actor->SetVisibility(
+    this->InteractionPipeline->Visibility && this->MarkupsDisplayNode->GetHandlesInteractive());
 
   vtkNew<vtkTransform> handleToWorldTransform;
   handleToWorldTransform->SetMatrix(markupsNode->GetInteractionHandleToWorldMatrix());
@@ -911,6 +912,13 @@ void vtkSlicerMarkupsWidgetRepresentation::GetInteractionHandleVectorWorld(int t
 }
 
 //----------------------------------------------------------------------
+void vtkSlicerMarkupsWidgetRepresentation::SetInteractionPipelineVisibility(bool value)
+{
+  this->InteractionPipeline->Visibility = value;
+  this->UpdateInteractionPipeline();
+}
+
+//----------------------------------------------------------------------
 void vtkSlicerMarkupsWidgetRepresentation::GetInteractionHandlePositionWorld(int type, int index, double positionWorld[3])
 {
   if (!positionWorld)
@@ -1035,6 +1043,8 @@ vtkSlicerMarkupsWidgetRepresentation::MarkupsInteractionPipeline::MarkupsInterac
 
   this->StartFadeAngle = 30;
   this->EndFadeAngle = 20;
+
+  this->Visibility = true;
 }
 
 //----------------------------------------------------------------------
