@@ -43,6 +43,8 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerCommandOptions : public qSlicerCoreComma
   Q_PROPERTY(QString annotationFilePath READ annotationFilePath CONSTANT)
   Q_PROPERTY(int limsSpecimenID READ limsSpecimenID CONSTANT)
   Q_PROPERTY(QString limsBaseURL READ limsBaseURL CONSTANT)
+  Q_PROPERTY(QString atlasType READ atlasType CONSTANT)
+
 public:
   typedef qSlicerCoreCommandOptions Superclass;
   qSlicerCommandOptions();
@@ -69,6 +71,8 @@ public:
   int limsSpecimenID()const;
 
   QString limsBaseURL()const;
+
+  QString atlasType()const;
 
 protected:
   void addArguments() override;
