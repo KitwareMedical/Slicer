@@ -89,14 +89,22 @@ QString qSlicerCommandOptions::annotationFilePath()const
   return this->parsedArgs().value("annotation-file").toString();
 }
 
+//-----------------------------------------------------------------------------
 int qSlicerCommandOptions::limsSpecimenID()const
 {
     return this->parsedArgs().value("lims-specimen-id").toInt();
 }
 
+//-----------------------------------------------------------------------------
 QString qSlicerCommandOptions::limsBaseURL()const
 {
     return this->parsedArgs().value("lims-base-url").toString();
+}
+
+//-----------------------------------------------------------------------------
+QString qSlicerCommandOptions::atlasType()const
+{
+    return this->parsedArgs().value("atlas-type").toString();
 }
 
 //-----------------------------------------------------------------------------
@@ -143,4 +151,7 @@ void qSlicerCommandOptions::addArguments()
 
   this->addArgument("lims-base-url", "", QVariant::String,
                     "LIMS base url");
+
+  this->addArgument("atlas-type", "", QVariant::String,
+                    "Specify the atlas type to load: 'ccf' or 'mni'. Default is 'ccf'");
 }
