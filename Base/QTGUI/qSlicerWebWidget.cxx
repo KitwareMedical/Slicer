@@ -33,6 +33,8 @@
 #include <QWebEngineDownloadItem>
 #include <QWebEngineScript>
 #include <QWebEnginePage>
+#include <QPageLayout>
+#include <QPageSize>
 #include <QWebEngineProfile>
 #include <QWebEngineScriptCollection>
 #include <QFile>
@@ -384,10 +386,10 @@ void qSlicerWebWidget::onDownloadFinished(QNetworkReply* reply)
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWebWidget::printToPdf(const QString& filePath)
+void qSlicerWebWidget::printToPdf(const QString& filePath, const QPageLayout& layout)
 {
   Q_D(qSlicerWebWidget);
-  d->WebEnginePage->printToPdf(filePath);
+  d->WebEnginePage->printToPdf(filePath, layout);
 }
 
 // --------------------------------------------------------------------------
