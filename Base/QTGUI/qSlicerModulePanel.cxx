@@ -300,11 +300,10 @@ bool qSlicerModulePanel::eventFilter(QObject* watchedModule, QEvent* event)
 QSize qSlicerModulePanel::minimumSizeHint()const
 {
   Q_D(const qSlicerModulePanel);
-  // QScrollArea::minumumSizeHint is wrong. QScrollArea are not meant to
+  // QScrollArea::minimumSizeHint is wrong. QScrollArea are not meant to
   // be resized. The minimumSizeHint is actually the width of the module
   // representation.
-  QSize size = QSize(d->ScrollArea->widget()->minimumSizeHint().width() +
-                  d->ScrollArea->horizontalScrollBar()->sizeHint().width(),
+  QSize size = QSize(d->ScrollArea->widget()->minimumSizeHint().width(),
                   this->Superclass::minimumSizeHint().height());
   return size;
 }
