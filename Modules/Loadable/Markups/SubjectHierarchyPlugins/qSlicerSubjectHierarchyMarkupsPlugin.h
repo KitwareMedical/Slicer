@@ -101,6 +101,11 @@ public:
 protected slots:
   /// Called when clicking on rename point action
   void renamePoint();
+  /// Called when clicking on delete node action
+  void requestDeleteNode();
+  /// Called by a timer to remove those nodes from the scene that were requested to be deleted.
+  /// (because node cannot be deleted while a node event is being processed)
+  void removeNodesToBeDeleted();
   /// Called when clicking on delete point action
   void deletePoint();
   /// Called when clicking on toggle select point action

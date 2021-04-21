@@ -54,6 +54,7 @@
 #include <QDebug>
 #include <QInputDialog>
 #include <QStandardItem>
+#include <QTimer>
 #include <QAction>
 
 // Slicer includes
@@ -73,9 +74,12 @@ public:
 
 public:
   QAction* RenamePointAction;
+  QAction* DeleteNodeAction;
   QAction* DeletePointAction;
   QAction* ToggleSelectPointAction;
   QAction* ToggleHandleInteractive;
+
+  QList< vtkWeakPointer<vtkMRMLMarkupsNode> > NodesToDelete;
 
   QVariantMap ViewMenuEventData;
 };
@@ -87,6 +91,7 @@ public:
 qSlicerSubjectHierarchyMarkupsPluginPrivate::qSlicerSubjectHierarchyMarkupsPluginPrivate(qSlicerSubjectHierarchyMarkupsPlugin& object)
 : q_ptr(&object)
 , RenamePointAction(nullptr)
+, DeleteNodeAction(nullptr)
 , DeletePointAction(nullptr)
 , ToggleSelectPointAction(nullptr)
 , ToggleHandleInteractive(nullptr)
@@ -105,6 +110,10 @@ void qSlicerSubjectHierarchyMarkupsPluginPrivate::init()
   this->DeletePointAction = new QAction("Delete point", q);
   this->DeletePointAction->setObjectName("DeletePointAction");
   QObject::connect(this->DeletePointAction, SIGNAL(triggered()), q, SLOT(deletePoint()));
+
+  this->DeleteNodeAction = new QAction("Delete markup", q);
+  this->DeleteNodeAction->setObjectName("DeleteNodeAction");
+  QObject::connect(this->DeleteNodeAction, SIGNAL(triggered()), q, SLOT(requestDeleteNode()));
 
   this->ToggleSelectPointAction = new QAction("Toggle select point", q);
   this->ToggleSelectPointAction->setObjectName("ToggleSelectPointAction");
@@ -396,7 +405,7 @@ QList<QAction*> qSlicerSubjectHierarchyMarkupsPlugin::viewContextMenuActions()co
   Q_D(const qSlicerSubjectHierarchyMarkupsPlugin);
 
   QList<QAction*> actions;
-  actions << d->RenamePointAction << d->DeletePointAction << d->ToggleSelectPointAction << d->ToggleHandleInteractive;
+  actions << d->RenamePointAction << d->DeleteNodeAction << d->DeletePointAction << d->ToggleSelectPointAction << d->ToggleHandleInteractive;
   return actions;
 }
 
@@ -430,6 +439,7 @@ void qSlicerSubjectHierarchyMarkupsPlugin::showViewContextMenuActionsForItem(vtk
 
     d->RenamePointAction->setVisible(!handlesSelected);
     d->DeletePointAction->setVisible(!handlesSelected);
+    d->DeleteNodeAction->setVisible(true);
     d->ToggleSelectPointAction->setVisible(!handlesSelected);
 
     vtkMRMLMarkupsDisplayNode* displayNode = vtkMRMLMarkupsDisplayNode::SafeDownCast(associatedNode->GetDisplayNode());
@@ -482,6 +492,63 @@ void qSlicerSubjectHierarchyMarkupsPlugin::renamePoint()
     }
 
   markupsNode->SetNthControlPointLabel(componentIndex, newName.toUtf8().constData());
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerSubjectHierarchyMarkupsPlugin::requestDeleteNode()
+{
+  Q_D(qSlicerSubjectHierarchyMarkupsPlugin);
+
+  if (d->ViewMenuEventData.find("NodeID") == d->ViewMenuEventData.end())
+    {
+    qCritical() << Q_FUNC_INFO << ": No node ID found in the view menu event data";
+    return;
+    }
+  vtkMRMLScene* scene = qSlicerSubjectHierarchyPluginHandler::instance()->mrmlScene();
+  if (!scene)
+    {
+    qCritical() << Q_FUNC_INFO << ": Failed to access MRML scene";
+    return;
+    }
+
+  // Get markups node
+  QString nodeID = d->ViewMenuEventData["NodeID"].toString();
+  vtkMRMLNode* node = scene->GetNodeByID(nodeID.toUtf8().constData());
+  vtkMRMLMarkupsNode* markupsNode = vtkMRMLMarkupsNode::SafeDownCast(node);
+  if (!markupsNode)
+    {
+    qCritical() << Q_FUNC_INFO << ": Failed to get markups node by ID " << nodeID;
+    return;
+    }
+
+  d->NodesToDelete.push_back(markupsNode);
+  QTimer::singleShot(0, this, SLOT(removeNodesToBeDeleted()));
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerSubjectHierarchyMarkupsPlugin::removeNodesToBeDeleted()
+{
+  Q_D(qSlicerSubjectHierarchyMarkupsPlugin);
+  vtkMRMLScene* scene = qSlicerSubjectHierarchyPluginHandler::instance()->mrmlScene();
+  if (!scene)
+    {
+    qCritical() << Q_FUNC_INFO << ": Failed to access MRML scene";
+    return;
+    }
+  if (scene->IsClosing())
+    {
+    return;
+    }
+
+  foreach(vtkWeakPointer<vtkMRMLMarkupsNode> markupsNode, d->NodesToDelete)
+    {
+    if (!markupsNode)
+      {
+      continue;
+      }
+    scene->RemoveNode(markupsNode);
+    }
+  d->NodesToDelete.clear();
 }
 
 //-----------------------------------------------------------------------------
