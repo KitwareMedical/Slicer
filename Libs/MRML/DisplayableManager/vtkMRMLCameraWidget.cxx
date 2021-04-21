@@ -110,7 +110,7 @@ vtkMRMLCameraWidget::vtkMRMLCameraWidget()
   // Pan
   this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::LeftButtonPressEvent, vtkEvent::ShiftModifier,
     WidgetStateTranslate, WidgetEventTranslateStart, WidgetEventTranslateEnd);
-  this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::MiddleButtonPressEvent, vtkEvent::NoModifier,
+  this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::RightButtonPressEvent, vtkEvent::NoModifier,
     WidgetStateTranslate, WidgetEventTranslateStart, WidgetEventTranslateEnd);
   // Touch translate
   this->SetEventTranslation(WidgetStateIdle, vtkCommand::StartPanEvent, vtkEvent::AnyModifier, WidgetEventTouchGestureStart);
@@ -120,7 +120,7 @@ vtkMRMLCameraWidget::vtkMRMLCameraWidget()
   // Dolly
   this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::LeftButtonPressEvent, vtkEvent::ShiftModifier + vtkEvent::ControlModifier,
     WidgetStateScale, WidgetEventScaleStart, WidgetEventScaleEnd);
-  this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::RightButtonPressEvent, vtkEvent::NoModifier,
+  this->SetEventTranslationClickAndDrag(WidgetStateIdle, vtkCommand::MiddleButtonPressEvent, vtkEvent::NoModifier,
     WidgetStateScale, WidgetEventScaleStart, WidgetEventScaleEnd);
   this->SetEventTranslation(WidgetStateIdle, vtkCommand::MouseWheelForwardEvent, vtkEvent::NoModifier, WidgetEventCameraWheelZoomIn);
   this->SetEventTranslation(WidgetStateIdle, vtkCommand::MouseWheelBackwardEvent, vtkEvent::NoModifier, WidgetEventCameraWheelZoomOut);
