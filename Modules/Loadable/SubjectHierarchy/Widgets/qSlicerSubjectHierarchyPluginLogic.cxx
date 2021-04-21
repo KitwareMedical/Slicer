@@ -524,7 +524,7 @@ void qSlicerSubjectHierarchyPluginLogic::onDisplayMenuEvent(vtkObject* displayNo
       {
       d->ViewMenu->addAction(action);
       }
-    d->ViewMenu->addAction(d->EditPropertiesAction);
+    //d->ViewMenu->addAction(d->EditPropertiesAction);
     }
 
   // Have all plugins show context view menu actions for current item

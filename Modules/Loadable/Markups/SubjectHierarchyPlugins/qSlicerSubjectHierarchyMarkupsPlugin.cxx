@@ -405,7 +405,8 @@ QList<QAction*> qSlicerSubjectHierarchyMarkupsPlugin::viewContextMenuActions()co
   Q_D(const qSlicerSubjectHierarchyMarkupsPlugin);
 
   QList<QAction*> actions;
-  actions << d->RenamePointAction << d->DeleteNodeAction << d->DeletePointAction << d->ToggleSelectPointAction << d->ToggleHandleInteractive;
+  // actions << d->RenamePointAction << d->DeleteNodeAction << d->DeletePointAction << d->ToggleSelectPointAction << d->ToggleHandleInteractive;
+  actions << d->DeleteNodeAction;
   return actions;
 }
 
